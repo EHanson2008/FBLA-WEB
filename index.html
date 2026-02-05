@@ -1,3 +1,4 @@
+<!-- ===================== index.html ===================== -->
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -38,20 +39,28 @@
   </header>
 
   <main>
-    <!-- HOME -->
+    <!-- ===================== HOME ===================== -->
     <section id="home">
       <div class="hero">
         <h1>AP Learning Hub</h1>
-        <p>Your all-in-one dashboard for studying smarter: schedule sessions, track tasks, and keep resources in one place.</p>
+        <p>Your all-in-one dashboard: plan sessions, track tasks, share a hub, and keep everything in one place.</p>
+
         <div class="row" style="margin-top:12px;">
           <button class="btn primary tab" data-target="dashboard" type="button">Go to Dashboard</button>
           <button class="btn ghost tab" data-target="schedule" type="button">Plan Study Schedule</button>
           <span class="pill" id="userPill">Not logged in</span>
+          <span class="pill" id="loginStreakPill">Login streak: 0</span>
+        </div>
+
+        <div class="card" style="margin-top:14px; background:var(--soft);">
+          <h2 style="margin:0 0 8px;">Daily Encouragement</h2>
+          <p class="small" style="margin:0 0 10px;">Click to reveal your message for today.</p>
+          <button class="btn primary" id="encourageBtn" type="button">Reveal message</button>
+          <p class="small" id="encourageText" style="margin-top:10px;"></p>
         </div>
       </div>
 
-      <!-- ✅ More full Home (includes daily boost click-to-activate) -->
-      <div class="grid cols-4" style="margin-top:14px;">
+      <div class="grid cols-3" style="margin-top:16px;">
         <div class="card">
           <h2>Today’s Focus</h2>
           <p class="small" id="todayFocus">Add tasks in the Dashboard to see them here.</p>
@@ -67,26 +76,32 @@
           <div class="progress"><div id="progressBar"></div></div>
           <p class="small" id="progressText" style="margin-top:8px;">0% complete</p>
         </div>
+      </div>
 
-        <div class="card" id="boostCard">
-          <h2>Daily Boost</h2>
-          <p class="small" id="boostText">Tap for today’s encouragement.</p>
-          <div class="row" style="margin-top:10px;">
-            <button class="btn primary" id="boostBtn" type="button">Activate</button>
-            <span class="pill" id="boostPill" style="display:none;">Unlocked</span>
-          </div>
+      <div class="grid cols-2" style="margin-top:16px;">
+        <div class="card">
+          <h2>Quick Tips</h2>
+          <ul class="small" style="margin:0; padding-left:18px;">
+            <li>Keep sessions short: 25–45 minutes.</li>
+            <li>End each session with 3 quick review questions.</li>
+            <li>Use the hub for group study + shared schedule.</li>
+          </ul>
+        </div>
+        <div class="card">
+          <h2>What’s Next</h2>
+          <p class="small">Try: add one task + one session. Then mark a task done to build streak momentum.</p>
         </div>
       </div>
     </section>
 
-    <!-- SCHEDULE -->
+    <!-- ===================== SCHEDULE ===================== -->
     <section id="schedule">
       <h1>Study schedule</h1>
-      <p>Add study sessions (shared when you're in a hub).</p>
+      <p>Add study sessions (shared when you’re in a hub).</p>
 
       <div class="card" style="margin-bottom:14px;">
         <h2>Shared Schedule Hub</h2>
-        <p class="small">Create a hub (share the code) or join a hub to sync schedules across accounts.</p>
+        <p class="small">Create a hub (share the code) or join a hub to sync schedules + chat across accounts.</p>
         <div class="row" style="margin-top:10px;">
           <button class="btn primary" id="createHubBtn" type="button">Create hub</button>
           <input id="hubCode" placeholder="Enter hub code" style="max-width:260px;">
@@ -95,7 +110,7 @@
           <span class="pill" id="hubStatus">No hub selected</span>
         </div>
         <p class="small" style="margin-top:8px;">
-          Not in a hub? Your schedule saves locally. In a hub? Your schedule is shared live.
+          Not in a hub? Schedule saves locally. In a hub? Schedule + chat + live sessions sync in real time.
         </p>
       </div>
 
@@ -119,6 +134,9 @@
           <label class="small" style="margin-top:10px;">Notes</label>
           <textarea id="sessNotes" rows="3" placeholder="What are you doing? What to bring?"></textarea>
 
+          <label class="small" style="margin-top:10px;">Video link (optional)</label>
+          <input id="sessVideo" placeholder="https://meet.google.com/... or Zoom link" />
+
           <div class="row" style="margin-top:10px;">
             <button class="btn primary" id="addSessionBtn" type="button">Add session</button>
             <button class="btn ghost" id="clearSessionsBtn" type="button">Clear all</button>
@@ -137,26 +155,24 @@
           <p class="small">Start a live session from a scheduled session, or join one below.</p>
           <div class="list" id="liveList"></div>
           <p class="small" id="liveEmpty">No live sessions right now.</p>
+
           <hr style="border:none; border-top:1px solid var(--border); margin:14px 0;">
 
-<h2>Hub Messages</h2>
-<p class="small">Chat with everyone in your hub (shared in real-time).</p>
+          <h2>Hub Messages</h2>
+          <p class="small">Chat with everyone in your hub (real-time).</p>
+          <div class="list" id="chatList"></div>
+          <p class="small" id="chatEmpty">No messages yet.</p>
 
-<div class="list" id="chatList"></div>
-<p class="small" id="chatEmpty">No messages yet.</p>
-
-<div class="row" style="margin-top:10px;">
-  <input id="chatText" placeholder="Type a message..." style="flex:1; min-width:220px;" />
-  <button class="btn primary" id="sendChatBtn" type="button">Send</button>
-</div>
-
-<p class="msg" id="chatMsg"></p>
-
+          <div class="row" style="margin-top:10px;">
+            <input id="chatText" placeholder="Type a message..." style="flex:1; min-width:220px;" />
+            <button class="btn primary" id="sendChatBtn" type="button">Send</button>
+          </div>
+          <p class="msg" id="chatMsg"></p>
         </div>
       </div>
     </section>
 
-    <!-- DASHBOARD -->
+    <!-- ===================== DASHBOARD ===================== -->
     <section id="dashboard">
       <h1>Dashboard</h1>
       <p>To-do list + progress tracking.</p>
@@ -223,7 +239,7 @@
 
       <div class="card" style="margin-top:14px;">
         <h2>Grades Tracker</h2>
-        <p class="small">Set category weights, then add assignments. It calculates your current grade.</p>
+        <p class="small">Set category weights, add assignments, and calculate current grade.</p>
 
         <div class="grid cols-3" style="margin-top:10px;">
           <div>
@@ -290,41 +306,47 @@
             <p class="small" id="assignEmpty">No assignments yet.</p>
           </div>
         </div>
+
         <hr style="border:none; border-top:1px solid var(--border); margin:14px 0;">
 
-<h2>Semester Grades</h2>
-<p class="small">Save your current class grade as Semester 1 / Semester 2, then calculate your final.</p>
+        <h2>Semester Grades</h2>
+        <p class="small">Save current grade as Semester 1 / Semester 2, then include the semester exam grade.</p>
 
-<div class="grid cols-3" style="margin-top:10px;">
-  <div class="card" style="background:var(--soft);">
-    <h3 style="margin:0 0 8px; font-size:16px;">Semester 1</h3>
-    <p class="small" id="sem1Text">—</p>
-    <button class="btn ghost" id="saveSem1Btn" type="button">Save current → S1</button>
-  </div>
+        <div class="grid cols-3" style="margin-top:10px;">
+          <div class="card" style="background:var(--soft);">
+            <h3 style="margin:0 0 8px; font-size:16px;">Semester 1</h3>
+            <p class="small" id="sem1Text">—</p>
+            <button class="btn ghost" id="saveSem1Btn" type="button">Save current → S1</button>
+          </div>
 
-  <div class="card" style="background:var(--soft);">
-    <h3 style="margin:0 0 8px; font-size:16px;">Semester 2</h3>
-    <p class="small" id="sem2Text">—</p>
-    <button class="btn ghost" id="saveSem2Btn" type="button">Save current → S2</button>
-  </div>
+          <div class="card" style="background:var(--soft);">
+            <h3 style="margin:0 0 8px; font-size:16px;">Semester 2</h3>
+            <p class="small" id="sem2Text">—</p>
+            <button class="btn ghost" id="saveSem2Btn" type="button">Save current → S2</button>
+          </div>
 
-  <div class="card" style="background:var(--soft);">
-    <h3 style="margin:0 0 8px; font-size:16px;">Final</h3>
-    <p class="small" id="finalSemText">—</p>
-    <div class="row" style="margin-top:8px;">
-      <input id="semWeight1" type="number" min="0" max="100" placeholder="S1 weight (50)" style="max-width:160px;">
-      <input id="semWeight2" type="number" min="0" max="100" placeholder="S2 weight (50)" style="max-width:160px;">
-      <button class="btn primary" id="calcFinalBtn" type="button">Calculate</button>
-    </div>
-  </div>
-</div>
+          <div class="card" style="background:var(--soft);">
+            <h3 style="margin:0 0 8px; font-size:16px;">Final</h3>
+            <p class="small" id="finalSemText">—</p>
 
-<p class="msg" id="semMsg"></p>
+            <div class="row" style="margin-top:8px;">
+              <input id="semWeight1" type="number" min="0" max="100" placeholder="S1 % (40)" style="max-width:140px;">
+              <input id="semWeight2" type="number" min="0" max="100" placeholder="S2 % (40)" style="max-width:140px;">
+              <input id="examWeight" type="number" min="0" max="100" placeholder="Exam % (20)" style="max-width:140px;">
+            </div>
 
+            <div class="row" style="margin-top:8px;">
+              <input id="examGrade" type="number" min="0" max="100" placeholder="Exam grade (ex: 88)" style="max-width:220px;">
+              <button class="btn primary" id="calcFinalBtn" type="button">Calculate</button>
+            </div>
+          </div>
+        </div>
+
+        <p class="msg" id="semMsg"></p>
       </div>
     </section>
 
-    <!-- RESOURCES -->
+    <!-- ===================== RESOURCES ===================== -->
     <section id="resources">
       <h1>Resources</h1>
       <p>Search your favorite links by class.</p>
@@ -332,9 +354,7 @@
       <div class="card">
         <div class="row">
           <input id="resSearch" placeholder="Search (ex: derivatives, circuits, rates...)" style="flex:1; min-width:240px;" />
-          <select id="resFilter" style="width:220px;">
-            <option value="All">All</option>
-          </select>
+          <select id="resFilter" style="width:220px;"></select>
         </div>
 
         <div class="list" id="resList" style="margin-top:12px;"></div>
@@ -342,43 +362,46 @@
       </div>
     </section>
 
-    <!-- LOGIN -->
+    <!-- ===================== LOGIN ===================== -->
     <section id="login">
       <h1>Login</h1>
-      <p>Sign up or log in.</p>
+      <p>Sign up or log in with email + password.</p>
 
-      <div class="login-wrap">
-        <div class="login-box">
-          <div class="login-title">
-            <h2>Account</h2>
-            <span class="pill" id="statusPill">Not logged in</span>
+      <div class="loginWrap">
+        <div class="loginCard">
+          <div class="loginHeader">
+            <h2 style="margin:0;">Welcome back</h2>
+            <p class="small" style="margin:6px 0 0;">Log in to sync hubs, schedules, and live sessions.</p>
           </div>
 
-          <label for="email">Email</label>
-          <input id="email" type="email" placeholder="you@example.com" autocomplete="username" />
+          <div class="loginGrid">
+            <div>
+              <label class="small" for="email">Email</label>
+              <input id="email" type="email" placeholder="you@example.com" autocomplete="username" />
+            </div>
 
-          <label for="password">Password</label>
-          <input id="password" type="password" placeholder="••••••••" autocomplete="current-password" />
+            <div>
+              <label class="small" for="password">Password</label>
+              <input id="password" type="password" placeholder="••••••••" autocomplete="current-password" />
+            </div>
+          </div>
 
-          <button id="googleBtn" class="btn ghost login-wide" type="button">
+          <div class="row" style="margin-top:10px;">
+            <button id="loginBtn" class="btn primary" type="button" style="flex:1;">Log in</button>
+            <button id="signupBtn" class="btn ghost" type="button" style="flex:1;">Sign up</button>
+          </div>
+
+          <button id="googleBtn" class="btn ghost" type="button" style="margin-top:10px; width:100%;">
             Sign in with Google
           </button>
 
-          <div class="login-actions">
-            <button id="signupBtn" class="btn ghost" type="button">Sign up</button>
-            <button id="loginBtn" class="btn primary" type="button">Log in</button>
+          <div class="row" style="margin-top:10px;">
+            <button id="resetBtn" class="btn ghost" type="button" style="flex:1;">Forgot password</button>
+            <button id="logoutBtn" class="btn danger" type="button" style="flex:1; display:none;">Logout</button>
           </div>
 
-          <button id="resetBtn" class="btn ghost login-wide" type="button">
-            Forgot password
-          </button>
-
-          <button id="logoutBtn" class="btn ghost login-wide" type="button" style="display:none;">
-            Logout
-          </button>
-
           <p id="msg" class="msg"></p>
-          <p class="login-meta" id="status"></p>
+          <p class="tiny" id="status"></p>
         </div>
       </div>
     </section>
