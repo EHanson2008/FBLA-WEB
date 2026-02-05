@@ -1,3 +1,4 @@
+<!-- index.html -->
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -9,11 +10,10 @@
   <!-- Firebase (compat versions) -->
   <script src="https://www.gstatic.com/firebasejs/10.12.5/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.12.5/firebase-auth-compat.js"></script>
-  <!-- ✅ Firestore (required for shared schedules + live sessions) -->
   <script src="https://www.gstatic.com/firebasejs/10.12.5/firebase-firestore-compat.js"></script>
 
   <style>
-    /* Login box styling (only affects thae login section) */
+    /* Login box styling (only affects the login section) */
     #login .box{
       width:min(380px, 92vw);
       background:#fff;
@@ -175,6 +175,34 @@
           <p class="small">Start a live session from a scheduled session, or join one below.</p>
           <div class="list" id="liveList"></div>
           <p class="small" id="liveEmpty">No live sessions right now.</p>
+
+          <hr style="border:none; border-top:1px solid var(--border); margin:14px 0;">
+
+          <!-- ✅ Shared Chat -->
+          <h2>Live Chat</h2>
+          <p class="small">Chat is shared inside your hub (works best during live sessions).</p>
+          <div class="card" style="margin-top:10px;">
+            <div class="row">
+              <input id="chatText" placeholder="Type a message..." style="flex:1; min-width:220px;">
+              <button class="btn primary" id="sendChatBtn" type="button">Send</button>
+            </div>
+            <div class="list" id="chatList" style="margin-top:12px; max-height:240px; overflow:auto;"></div>
+            <p class="small" id="chatEmpty">No messages yet.</p>
+          </div>
+
+          <hr style="border:none; border-top:1px solid var(--border); margin:14px 0;">
+
+          <!-- ✅ Shared Notes -->
+          <h2>Shared Notes</h2>
+          <p class="small">Everyone in your hub can edit these notes live.</p>
+          <div class="card" style="margin-top:10px;">
+            <textarea id="sharedNotes" rows="8" placeholder="Write shared notes here..."></textarea>
+            <div class="row" style="margin-top:10px;">
+              <button class="btn primary" id="saveNotesBtn" type="button">Save notes</button>
+              <span class="pill" id="notesStatus">Not saved</span>
+            </div>
+          </div>
+
         </div>
       </div>
     </section>
@@ -192,26 +220,7 @@
           <div class="row" style="margin-top:10px;">
             <div style="flex:1; min-width:220px;">
               <label class="small">Class</label>
-              <select id="taskClass">
-                <option>Calc AB</option>
-                <option>Calc BC</option>
-                <option>Physics 1</option>
-                <option>Physics 2</option>
-                <option>Physics C</option>
-                <option>Chem</option>
-                <option>Bio</option>
-                <option>APUSH</option>
-                <option>Euro</option>
-                <option>HUGE</option>
-                <option>Micro</option>
-                <option>Macro</option>
-                <option>Lang</option>
-                <option>Lit</option>
-                <option>Seminar</option>
-                <option>Research</option>
-                <option>Gov</option>
-                <option>Other</option>
-              </select>
+              <select id="taskClass"></select>
             </div>
             <div style="flex:1; min-width:220px;">
               <label class="small">Due (optional)</label>
@@ -269,26 +278,7 @@
         <div class="grid cols-3" style="margin-top:10px;">
           <div>
             <label class="small">Class</label>
-            <select id="gradeClass">
-              <option>Calc AB</option>
-              <option>Calc BC</option>
-              <option>Physics 1</option>
-              <option>Physics 2</option>
-              <option>Physics C</option>
-              <option>Chem</option>
-              <option>Bio</option>
-              <option>APUSH</option>
-              <option>Euro</option>
-              <option>HUGE</option>
-              <option>Micro</option>
-              <option>Macro</option>
-              <option>Lang</option>
-              <option>Lit</option>
-              <option>Seminar</option>
-              <option>Research</option>
-              <option>Gov</option>
-              <option>Other</option>
-            </select>
+            <select id="gradeClass"></select>
           </div>
 
           <div>
@@ -351,6 +341,7 @@
           </div>
         </div>
       </div>
+
     </section>
 
     <section id="resources">
@@ -360,27 +351,7 @@
       <div class="card">
         <div class="row">
           <input id="resSearch" placeholder="Search (ex: derivatives, circuits, rates...)" style="flex:1; min-width:240px;" />
-          <select id="resFilter" style="width:220px;">
-            <option value="All">All</option>
-            <option value="Calc AB">Calc AB</option>
-            <option value="Calc BC">Calc BC</option>
-            <option value="Physics 1">Physics 1</option>
-            <option value="Physics 2">Physics 2</option>
-            <option value="Physics C">Physics C</option>
-            <option value="Chem">Chem</option>
-            <option value="Bio">Bio</option>
-            <option value="APUSH">APUSH</option>
-            <option value="Euro">Euro</option>
-            <option value="HUGE">HUGE</option>
-            <option value="Micro">Micro</option>
-            <option value="Macro">Macro</option>
-            <option value="Lang">AP Lang</option>
-            <option value="Lit">Lit</option>
-            <option value="Seminar">Seminar</option>
-            <option value="Research">Research</option>
-            <option value="Gov">Gov</option>
-            <option value="Other">Other</option>
-          </select>
+          <select id="resFilter" style="width:220px;"></select>
         </div>
 
         <div class="list" id="resList" style="margin-top:12px;"></div>
