@@ -1,25 +1,22 @@
-/* =========================
-   style.css (FULL)
-========================= */
 :root{
   /* PAGE */
-  --bg:#ffffff;              /* daylight white */
+  --bg:#ffffff;
 
   /* BOXES */
-  --card:#e9f2ff;            /* bright light blue */
-  --soft:#dbeaff;            /* slightly deeper blue */
+  --card:#e9f2ff;
+  --soft:#dbeaff;
 
   /* TEXT */
-  --text:#0b1f3a;            /* dark blue text EVERYWHERE */
+  --text:#0b1f3a;
   --muted:#2f4b73;
 
   /* STRUCTURE */
-  --border:#1e3a8a;          /* strong dark blue lines */
+  --border:#1e3a8a;
   --shadow:none;
 
   /* ACCENTS */
-  --accent:#1e3a8a;          /* dark blue */
-  --accent2:#ffdd55;         /* sunshine yellow */
+  --accent:#1e3a8a;
+  --accent2:#ffdd55;
 
   /* STATES */
   --danger:#b00020;
@@ -58,7 +55,7 @@ body{
 .nav{ display:flex; gap:10px; flex-wrap:wrap; }
 .spacer{ flex:1; }
 
-/* ===== NAV TABS (BOXES) ===== */
+/* ===== NAV TABS ===== */
 .tab{
   padding:8px 12px;
   border-radius:4px;
@@ -103,9 +100,10 @@ p{
 @media (min-width:900px){
   .grid.cols-2{ grid-template-columns:1.2fr .8fr; }
   .grid.cols-3{ grid-template-columns:repeat(3,1fr); }
+  .grid.cols-4{ grid-template-columns:repeat(4,1fr); }
 }
 
-/* ===== CARDS / BOXES ===== */
+/* ===== CARDS ===== */
 .card{
   background:var(--card);
   border:2px solid var(--accent);
@@ -161,12 +159,6 @@ input:focus, select:focus, textarea:focus{
   color:var(--text);
 }
 
-.btn.danger{
-  background:var(--danger);
-  color:#ffffff;
-  border:2px solid var(--danger);
-}
-
 /* ===== LISTS ===== */
 .list{
   display:flex;
@@ -186,11 +178,7 @@ input:focus, select:focus, textarea:focus{
 }
 
 .item strong{ color:var(--accent); }
-
-.item .meta{
-  font-size:13px;
-  color:var(--text);
-}
+.item .meta{ font-size:13px; color:var(--text); }
 
 /* ===== PROGRESS ===== */
 .progress{
@@ -215,7 +203,6 @@ input:focus, select:focus, textarea:focus{
   font-size:13px;
   color:var(--danger);
 }
-
 .msg.ok{ color:#0a7a0a; }
 
 /* ===== HERO ===== */
@@ -232,7 +219,10 @@ input:focus, select:focus, textarea:focus{
   color:var(--accent);
 }
 
-.hero p{ max-width:65ch; color:var(--text); }
+.hero p{
+  max-width:65ch;
+  color:var(--text);
+}
 
 /* ===== PILLS ===== */
 .pill{
@@ -248,69 +238,66 @@ input:focus, select:focus, textarea:focus{
   font-size:12px;
 }
 
-/* ===== CHAT ===== */
-.chatBox{
-  height:260px;
-  overflow:auto;
-  background:#ffffff;
-  border:2px solid var(--accent);
-  border-radius:6px;
-  padding:10px;
-}
-
-.chatMsg{
-  padding:10px;
-  border:2px solid var(--accent);
-  background:var(--soft);
-  border-radius:6px;
-  margin-bottom:10px;
-}
-
-.chatMeta{
-  font-size:12px;
-  color:var(--muted);
-  margin-top:6px;
-}
-
-.chatImg{
-  margin-top:8px;
-  width:100%;
-  max-width:420px;
-  border-radius:6px;
-  border:2px solid var(--accent);
-  display:block;
-}
-
-/* ===== LOGIN (prettier + matches site) ===== */
-.loginWrap{
-  display:grid;
-  place-items:center;
+/* ===== LOGIN (bigger, square, matches theme) ===== */
+#login .login-wrap{
+  max-width:520px;
   margin-top:12px;
 }
 
-.loginCard{
-  width:min(520px, 96vw);
+#login .login-box{
   background:var(--card);
   border:2px solid var(--accent);
-  border-radius:10px;
+  border-radius:6px;
   padding:18px;
 }
 
-.loginHeader{
+#login .login-title{
   display:flex;
   align-items:center;
-  gap:12px;
-  margin-bottom:12px;
+  justify-content:space-between;
+  gap:10px;
+  margin-bottom:8px;
 }
 
-.loginIcon{
-  width:44px;
-  height:44px;
-  border-radius:8px;
-  border:2px solid var(--accent);
-  background:var(--accent2);
-  display:grid;
-  place-items:center;
-  font-weight:900;
+#login .login-title h2{
+  margin:0;
+  font-size:18px;
+  color:var(--accent);
+}
+
+#login label{
+  display:block;
+  margin-top:12px;
+  font-size:12px;
+  font-weight:700;
   color:var(--text);
+}
+
+#login input{
+  margin-top:6px;
+  width:100%;
+  padding:12px 12px;
+  border-radius:4px;
+  border:2px solid var(--accent);
+  background:#fff;
+  color:var(--text);
+}
+
+#login .login-actions{
+  display:grid;
+  grid-template-columns: 1fr 1fr;
+  gap:10px;
+  margin-top:12px;
+}
+
+#login .login-wide{
+  margin-top:10px;
+  width:100%;
+}
+
+#login .login-meta{
+  margin-top:10px;
+  font-size:12px;
+  color:var(--muted);
+  line-height:1.4;
 }
