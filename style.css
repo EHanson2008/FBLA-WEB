@@ -32,7 +32,7 @@ body{
   color:var(--text);
 }
 
-/* ===== TOP BAR ===== */
+/* TOP BAR */
 .topbar{
   position: sticky;
   top: 0;
@@ -56,7 +56,7 @@ body{
 .nav{ display:flex; gap:10px; flex-wrap:wrap; }
 .spacer{ flex:1; }
 
-/* ===== NAV TABS (BOXES) ===== */
+/* NAV TABS */
 .tab{
   padding:8px 12px;
   border-radius:4px;
@@ -74,7 +74,7 @@ body{
   color:#ffffff;
 }
 
-/* ===== MAIN ===== */
+/* MAIN */
 main{
   max-width:1100px;
   margin:0 auto;
@@ -95,7 +95,7 @@ p{
   line-height:1.5;
 }
 
-/* ===== GRID ===== */
+/* GRID */
 .grid{ display:grid; gap:14px; }
 
 @media (min-width:900px){
@@ -103,7 +103,7 @@ p{
   .grid.cols-3{ grid-template-columns:repeat(3,1fr); }
 }
 
-/* ===== CARDS / BOXES ===== */
+/* CARDS */
 .card{
   background:var(--card);
   border:2px solid var(--accent);
@@ -117,7 +117,7 @@ p{
   color:var(--accent);
 }
 
-/* ===== FORMS ===== */
+/* FORMS */
 .row{
   display:flex;
   gap:10px;
@@ -135,33 +135,36 @@ input, select, textarea{
   color:var(--text);
 }
 
-textarea{ resize:vertical; }
-
 input:focus, select:focus, textarea:focus{
   box-shadow:0 0 0 3px rgba(255,221,85,.7);
 }
 
-/* ===== BUTTONS ===== */
+/* BUTTONS */
 .btn{
   border-radius:4px;
   padding:10px 12px;
   font-weight:800;
   cursor:pointer;
+  border:2px solid var(--accent);
 }
 
 .btn.primary{
   background:var(--accent2);
   color:var(--text);
-  border:2px solid var(--accent);
 }
 
 .btn.ghost{
   background:var(--card);
-  border:2px solid var(--accent);
   color:var(--text);
 }
 
-/* ===== LISTS ===== */
+.btn.danger{
+  background:var(--danger);
+  border-color:var(--danger);
+  color:#ffffff;
+}
+
+/* LISTS */
 .list{
   display:flex;
   flex-direction:column;
@@ -182,7 +185,7 @@ input:focus, select:focus, textarea:focus{
 .item strong{ color:var(--accent); }
 .item .meta{ font-size:13px; color:var(--text); }
 
-/* ===== PROGRESS ===== */
+/* PROGRESS */
 .progress{
   height:10px;
   background:#c7dbff;
@@ -197,7 +200,7 @@ input:focus, select:focus, textarea:focus{
   background:var(--accent2);
 }
 
-/* ===== SMALL TEXT ===== */
+/* SMALL TEXT */
 .small{ font-size:12px; color:var(--text); }
 
 .msg{
@@ -205,9 +208,17 @@ input:focus, select:focus, textarea:focus{
   font-size:13px;
   color:var(--danger);
 }
+
 .msg.ok{ color:#0a7a0a; }
 
-/* ===== HERO ===== */
+.tiny{
+  margin-top:10px;
+  font-size:12px;
+  color:var(--muted);
+  line-height:1.35;
+}
+
+/* HERO */
 .hero{
   padding:18px;
   background:var(--soft);
@@ -223,7 +234,7 @@ input:focus, select:focus, textarea:focus{
 
 .hero p{ max-width:65ch; color:var(--text); }
 
-/* ===== PILLS ===== */
+/* PILLS */
 .pill{
   display:inline-flex;
   align-items:center;
@@ -235,4 +246,14 @@ input:focus, select:focus, textarea:focus{
   font-weight:700;
   color:var(--text);
   font-size:12px;
+}
+
+/* ✅ LOGIN (matches site) */
+.login-card{ max-width:760px; }
+.login-grid{
+  display:grid;
+  gap:10px;
+}
+@media (min-width:900px){
+  .login-grid{ grid-template-columns:1fr 1fr; }
 }
