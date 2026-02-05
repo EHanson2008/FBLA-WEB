@@ -1163,6 +1163,105 @@ if (saveWeightsBtn){
     renderGrades();
   });
 }
+// ==============================
+// ✅ SEMESTER GRADES (Newest Grade Calculator)
+// ==============================
+const saveSem1Btn = document.getElementById("saveSem1Btn");
+const saveSem2Btn = document.getElementById("saveSem2Btn");
+const sem1Text = document.getElementById("sem1Text");
+const sem2Text = document.getElementById("sem2Text");
+const finalSemText = document.getElementById("finalSemText");
+const semWeight1 = document.getElementById("semWeight1");
+const semWeight2 = document.getElementById("semWeight2");
+const calcFinalBtn = document.getElementById("calcFinalBtn");
+const semMsg = document.getElementById("semMsg");
+
+function setSemMsg(text, ok=false){
+  if (!semMsg) return;
+  semMsg.textContent = text;
+  semMsg.className = ok ? "msg ok" : "msg";
+}
+
+function semKey(){
+  const who = currentUser ? currentUser.email : "guest";
+  return `ap_semesters_${who}`;
+}
+
+function getSemData(){ return LS.get(semKey(), {}); }
+function saveSemData(obj){ LS.set(semKey(), obj); }
+
+function getSemBlock(cls){
+  const data = getSemData();
+  if (!data[cls]) data[cls] = { s1:null, s2:null };
+  return { data, block: data[cls] };
+}
+
+function renderSemesterUI(){
+  if (!gradeClassEl) return;
+  const cls = gradeClassEl.value;
+  const { block } = getSemBlock(cls);
+
+  if (sem1Text) sem1Text.textContent = (block.s1 == null) ? "—" : `${Number(block.s1).toFixed(1)}%`;
+  if (sem2Text) sem2Text.textContent = (block.s2 == null) ? "—" : `${Number(block.s2).toFixed(1)}%`;
+
+  if (finalSemText) finalSemText.textContent = "—";
+  setSemMsg("", true);
+}
+
+function saveSemester(which){
+  if (!gradeClassEl) return;
+  const cls = gradeClassEl.value;
+  const { data, block } = getSemBlock(cls);
+
+  const { block: gradeBlock } = getClassBlock(cls);
+  const current = calcCurrentGrade(gradeBlock);
+
+  if (current == null){
+    setSemMsg("No current grade yet. Add weights + assignments first.", false);
+    return;
+  }
+
+  if (which === "s1") block.s1 = Number(current);
+  if (which === "s2") block.s2 = Number(current);
+
+  data[cls] = block;
+  saveSemData(data);
+  setSemMsg(`Saved ${cls} current grade to ${which.toUpperCase()}!`, true);
+  renderSemesterUI();
+}
+
+function calcFinalSemester(){
+  if (!gradeClassEl) return;
+  const cls = gradeClassEl.value;
+  const { block } = getSemBlock(cls);
+
+  if (block.s1 == null || block.s2 == null){
+    setSemMsg("Save both Semester 1 and Semester 2 first.", false);
+    return;
+  }
+
+  const w1 = Number(semWeight1?.value || 50);
+  const w2 = Number(semWeight2?.value || 50);
+  if (w1 + w2 !== 100){
+    setSemMsg("Weights must add to 100 (ex: 50 + 50).", false);
+    return;
+  }
+
+  const final = (block.s1 * w1 + block.s2 * w2) / 100;
+  if (finalSemText) finalSemText.textContent = `${final.toFixed(1)}%`;
+  setSemMsg("Final calculated!", true);
+}
+
+if (saveSem1Btn) saveSem1Btn.addEventListener("click", () => saveSemester("s1"));
+if (saveSem2Btn) saveSem2Btn.addEventListener("click", () => saveSemester("s2"));
+if (calcFinalBtn) calcFinalBtn.addEventListener("click", calcFinalSemester);
+
+// When you change class, update semester display too:
+if (gradeClassEl){
+  gradeClassEl.addEventListener("change", () => {
+    renderSemesterUI();
+  });
+}
 
 if (addAssignBtn){
   addAssignBtn.addEventListener("click", () => {
@@ -1270,6 +1369,106 @@ function formatDateTime(dateStr, timeStr){
   if (!dateStr || !timeStr) return "";
   return `${dateStr} at ${timeStr}`;
 }
+// ==============================
+// ✅ HUB CHAT (Messaging Area)
+// ==============================
+const chatList = document.getElementById("chatList");
+const chatEmpty = document.getElementById("chatEmpty");
+const chatText = document.getElementById("chatText");
+const sendChatBtn = document.getElementById("sendChatBtn");
+const chatMsg = document.getElementById("chatMsg");
+
+let unsubChat = null;
+
+function setChatMsg(text, ok=false){
+  if (!chatMsg) return;
+  chatMsg.textContent = text;
+  chatMsg.className = ok ? "msg ok" : "msg";
+}
+
+function renderChat(messages){
+  if (!chatList) return;
+  chatList.innerHTML = "";
+
+  if (chatEmpty) chatEmpty.style.display = messages.length ? "none" : "block";
+
+  messages.forEach(m => {
+    const div = document.createElement("div");
+    div.className = "item";
+    const when = m.createdAt?.toDate ? m.createdAt.toDate() : null;
+    const stamp = when ? when.toLocaleString() : "";
+
+    div.innerHTML = `
+      <div style="flex:1;">
+        <strong>${escapeHtml(m.sender || "Member")}</strong>
+        <div class="meta">${escapeHtml(stamp)}</div>
+        <div class="meta" style="margin-top:6px;">${escapeHtml(m.text || "")}</div>
+      </div>
+    `;
+    chatList.appendChild(div);
+  });
+}
+
+function startChatListener(){
+  if (unsubChat){ unsubChat(); unsubChat = null; }
+
+  if (!usingHub()){
+    renderChat([]);
+    return;
+  }
+
+  const hubId = getHubId();
+
+  unsubChat = db.collection("hubs").doc(hubId)
+    .collection("chat")
+    .orderBy("createdAt", "asc")
+    .limit(200)
+    .onSnapshot((qs) => {
+      const msgs = [];
+      qs.forEach(doc => msgs.push({ id: doc.id, ...doc.data() }));
+      renderChat(msgs);
+    }, (err) => {
+      console.error(err);
+      setChatMsg("Chat error (check Firestore rules + hub membership).", false);
+    });
+}
+
+async function sendChat(){
+  if (!usingHub()){
+    setChatMsg("Log in and join a hub to use chat.", false);
+    return;
+  }
+  const text = (chatText?.value || "").trim();
+  if (!text) return;
+
+  const hubId = getHubId();
+  const user = firebase.auth().currentUser;
+
+  try{
+    await db.collection("hubs").doc(hubId).collection("chat").add({
+      text,
+      sender: user?.email || "member",
+      uid: user?.uid || "",
+      createdAt: firebase.firestore.FieldValue.serverTimestamp()
+    });
+    if (chatText) chatText.value = "";
+    setChatMsg("", true);
+  }catch(e){
+    console.error(e);
+    setChatMsg("Could not send message.", false);
+  }
+}
+
+if (sendChatBtn) sendChatBtn.addEventListener("click", sendChat);
+if (chatText) chatText.addEventListener("keydown", (e) => { if (e.key === "Enter") sendChat(); });
+
+// ✅ IMPORTANT: hook chat into hub changes
+// You already call updateHubStatus(), startScheduleListener(), startLiveListener() on auth changes.
+// We also need chat:
+function startHubRealtime(){
+  startHubRealtime();
+  startChatListener();
+}
 
 // ==============================
 // Render all
@@ -1287,6 +1486,8 @@ function renderAll(){
   renderHomeWidgets();
   renderCharts();
   renderGrades();
+  renderSemesterUI();
+
 
   startScheduleListener();
   startLiveListener();
