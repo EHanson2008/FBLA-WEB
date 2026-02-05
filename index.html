@@ -1,4 +1,6 @@
-<!-- index.html -->
+<!-- =========================
+     index.html (FULL)
+========================= -->
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -7,10 +9,11 @@
   <title>AP Learning Hub</title>
   <link rel="stylesheet" href="style.css">
 
-  <!-- Firebase (compat) -->
+  <!-- Firebase (compat versions) -->
   <script src="https://www.gstatic.com/firebasejs/10.12.5/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.12.5/firebase-auth-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.12.5/firebase-firestore-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.5/firebase-storage-compat.js"></script>
 
   <script>
     const firebaseConfig = {
@@ -39,7 +42,7 @@
   </header>
 
   <main>
-    <!-- HOME -->
+    <!-- ================= HOME ================= -->
     <section id="home">
       <div class="hero">
         <h1>AP Learning Hub</h1>
@@ -48,6 +51,7 @@
           <button class="btn primary tab" data-target="dashboard" type="button">Go to Dashboard</button>
           <button class="btn ghost tab" data-target="schedule" type="button">Plan Study Schedule</button>
           <span class="pill" id="userPill">Not logged in</span>
+          <span class="pill" id="loginStreakPill">Login streak: 0</span>
         </div>
       </div>
 
@@ -56,24 +60,50 @@
           <h2>Today’s Focus</h2>
           <p class="small" id="todayFocus">Add tasks in the Dashboard to see them here.</p>
         </div>
+
         <div class="card">
           <h2>Upcoming Session</h2>
           <p class="small" id="upcomingSession">Add a session in Schedule.</p>
         </div>
+
         <div class="card">
           <h2>Progress</h2>
           <div class="progress"><div id="progressBar"></div></div>
           <p class="small" id="progressText" style="margin-top:8px;">0% complete</p>
         </div>
       </div>
+
+      <!-- ✅ More full + interesting home -->
+      <div class="grid cols-2" style="margin-top:14px;">
+        <div class="card">
+          <h2>Daily Boost</h2>
+          <p class="small" id="dailyBoost">Loading…</p>
+          <span class="pill" id="dailyBoostTag">Daily encouragement</span>
+        </div>
+
+        <div class="card">
+          <h2>Quick Actions</h2>
+          <p class="small">Jump right into what matters.</p>
+          <div class="row" style="margin-top:10px;">
+            <button class="btn primary tab" data-target="schedule" type="button">Add a Study Session</button>
+            <button class="btn ghost tab" data-target="dashboard" type="button">Add a Task</button>
+            <button class="btn ghost tab" data-target="resources" type="button">Find Resources</button>
+          </div>
+
+          <hr style="border:none; border-top:1px solid var(--border); margin:14px 0;">
+
+          <h3 style="margin:0 0 6px; font-size:16px;">This Week Snapshot</h3>
+          <p class="small" id="weekSnapshot">0 minutes studied • 0 tasks done</p>
+        </div>
+      </div>
     </section>
 
-    <!-- SCHEDULE -->
+    <!-- ================= SCHEDULE ================= -->
     <section id="schedule">
       <h1>Study schedule</h1>
-      <p>Add study sessions (shared when you're in a hub). Add a video link so everyone joins the same call.</p>
+      <p>Add study sessions (shared when you're in a hub). Start live sessions + share chat notes.</p>
 
-      <!-- Shared hub controls -->
+      <!-- ✅ Shared hub controls -->
       <div class="card" style="margin-bottom:14px;">
         <h2>Shared Schedule Hub</h2>
         <p class="small">Create a hub (share the code) or join a hub to sync schedules across accounts.</p>
@@ -93,7 +123,7 @@
         <div class="card">
           <h2>Add a session</h2>
           <label class="small">Title</label>
-          <input id="sessTitle" placeholder="Calc AB - FRQ practice" />
+          <input id="sessTitle" placeholder="AP Calc AB - FRQ practice" />
 
           <div class="row" style="margin-top:10px;">
             <div style="flex:1; min-width:220px;">
@@ -107,7 +137,7 @@
           </div>
 
           <label class="small" style="margin-top:10px;">Video link (optional)</label>
-          <input id="sessVideo" placeholder="https://meet.google.com/... or YouTube link" />
+          <input id="sessVideo" placeholder="https://meet.google.com/... or https://zoom.us/j/..." />
 
           <label class="small" style="margin-top:10px;">Notes</label>
           <textarea id="sessNotes" rows="3" placeholder="What are you doing? What to bring?"></textarea>
@@ -126,15 +156,35 @@
 
           <hr style="border:none; border-top:1px solid var(--border); margin:14px 0;">
 
+          <!-- ✅ Live Sessions -->
           <h2>Live study sessions</h2>
           <p class="small">Start a live session from a scheduled session, or join one below.</p>
           <div class="list" id="liveList"></div>
           <p class="small" id="liveEmpty">No live sessions right now.</p>
         </div>
       </div>
+
+      <!-- ✅ Hub Chat / Shared Notes + photo upload -->
+      <div class="card" style="margin-top:14px;">
+        <h2>Hub Chat / Shared Notes</h2>
+        <p class="small">Chat live with your hub (works when logged in + in a hub). You can upload pictures too.</p>
+
+        <div class="chatBox" id="chatBox"></div>
+
+        <div class="row" style="margin-top:10px;">
+          <input id="chatInput" placeholder="Type a message or shared note..." style="flex:1; min-width:220px;">
+          <label class="btn ghost" style="display:inline-flex; align-items:center; gap:8px;">
+            <span>📷 Add photo</span>
+            <input id="chatPhoto" type="file" accept="image/*" style="display:none;">
+          </label>
+          <button class="btn primary" id="sendChatBtn" type="button">Send</button>
+        </div>
+
+        <p class="small" id="chatStatus" style="margin-top:8px;">Not connected.</p>
+      </div>
     </section>
 
-    <!-- DASHBOARD -->
+    <!-- ================= DASHBOARD ================= -->
     <section id="dashboard">
       <h1>Dashboard</h1>
       <p>To-do list + progress tracking.</p>
@@ -143,29 +193,19 @@
         <div class="card">
           <h2>Add a task</h2>
           <label class="small">Task</label>
-          <input id="taskText" placeholder="Finish Physics circuits practice set" />
+          <input id="taskText" placeholder="Finish AP Physics circuits practice set" />
 
           <div class="row" style="margin-top:10px;">
             <div style="flex:1; min-width:220px;">
               <label class="small">Class</label>
               <select id="taskClass">
-                <option>Calc AB</option>
-                <option>Calc BC</option>
-                <option>Physics 1</option>
-                <option>Physics 2</option>
-                <option>Physics C</option>
-                <option>Chem</option>
-                <option>Bio</option>
-                <option>APUSH</option>
-                <option>Euro</option>
-                <option>HUGE</option>
-                <option>Micro</option>
-                <option>Macro</option>
-                <option>Lang</option>
-                <option>Lit</option>
-                <option>Seminar</option>
-                <option>Research</option>
-                <option>Gov</option>
+                <option>Calc AB</option><option>Calc BC</option>
+                <option>Physics 1</option><option>Physics 2</option><option>Physics C</option>
+                <option>Chem</option><option>Bio</option>
+                <option>APUSH</option><option>Euro</option><option>HUGE</option>
+                <option>Micro</option><option>Macro</option>
+                <option>Lang</option><option>Lit</option>
+                <option>Seminar</option><option>Research</option><option>Gov</option>
                 <option>Other</option>
               </select>
             </div>
@@ -218,81 +258,22 @@
         </div>
       </div>
 
-      <!-- GRADES -->
+      <!-- Grades tracker stays as-is in your app.js (you already had it) -->
       <div class="card" style="margin-top:14px;">
         <h2>Grades Tracker</h2>
         <p class="small">Set category weights, then add assignments. It calculates your current grade.</p>
-
-        <!-- ✅ Semester/Year Calculator (ADDED) -->
-        <hr style="border:none; border-top:1px solid var(--border); margin:14px 0;">
-
-        <h3 style="margin:0 0 8px; font-size:16px;">Semester / Year Grade Calculator</h3>
-        <p class="small">This is separate from the assignment tracker. Combine quarters/semesters.</p>
-
-        <div class="grid cols-3" style="margin-top:10px;">
-          <div>
-            <label class="small">Mode</label>
-            <select id="gradeMode">
-              <option value="semester">Semester (Q1 + Q2)</option>
-              <option value="year">Year (Sem 1 + Sem 2)</option>
-            </select>
-          </div>
-
-          <div>
-            <label class="small">Weight A (%)</label>
-            <input id="weightA" type="number" min="0" max="100" value="50">
-          </div>
-
-          <div>
-            <label class="small">Weight B (%)</label>
-            <input id="weightB" type="number" min="0" max="100" value="50">
-          </div>
-        </div>
-
-        <div class="grid cols-3" style="margin-top:10px;">
-          <div>
-            <label class="small" id="labelA">Q1 grade (%)</label>
-            <input id="gradeA" type="number" min="0" max="100" placeholder="ex: 87">
-          </div>
-          <div>
-            <label class="small" id="labelB">Q2 grade (%)</label>
-            <input id="gradeB" type="number" min="0" max="100" placeholder="ex: 91">
-          </div>
-          <div>
-            <label class="small">Result</label>
-            <div class="pill" id="calcResultPill">--</div>
-          </div>
-        </div>
-
-        <div class="row" style="margin-top:10px;">
-          <button class="btn primary" id="calcGradeBtn" type="button">Calculate</button>
-          <span class="small" id="calcGradeText"></span>
-        </div>
-
-        <!-- Your existing assignment-grade tracker continues -->
-        <hr style="border:none; border-top:1px solid var(--border); margin:14px 0;">
 
         <div class="grid cols-3" style="margin-top:10px;">
           <div>
             <label class="small">Class</label>
             <select id="gradeClass">
-              <option>Calc AB</option>
-              <option>Calc BC</option>
-              <option>Physics 1</option>
-              <option>Physics 2</option>
-              <option>Physics C</option>
-              <option>Chem</option>
-              <option>Bio</option>
-              <option>APUSH</option>
-              <option>Euro</option>
-              <option>HUGE</option>
-              <option>Micro</option>
-              <option>Macro</option>
-              <option>Lang</option>
-              <option>Lit</option>
-              <option>Seminar</option>
-              <option>Research</option>
-              <option>Gov</option>
+              <option>Calc AB</option><option>Calc BC</option>
+              <option>Physics 1</option><option>Physics 2</option><option>Physics C</option>
+              <option>Chem</option><option>Bio</option>
+              <option>APUSH</option><option>Euro</option><option>HUGE</option>
+              <option>Micro</option><option>Macro</option>
+              <option>Lang</option><option>Lit</option>
+              <option>Seminar</option><option>Research</option><option>Gov</option>
               <option>Other</option>
             </select>
           </div>
@@ -359,7 +340,7 @@
       </div>
     </section>
 
-    <!-- RESOURCES -->
+    <!-- ================= RESOURCES ================= -->
     <section id="resources">
       <h1>Resources</h1>
       <p>Search your favorite links by class.</p>
@@ -381,7 +362,7 @@
             <option value="HUGE">HUGE</option>
             <option value="Micro">Micro</option>
             <option value="Macro">Macro</option>
-            <option value="Lang">Lang</option>
+            <option value="Lang">AP Lang</option>
             <option value="Lit">Lit</option>
             <option value="Seminar">Seminar</option>
             <option value="Research">Research</option>
@@ -395,36 +376,45 @@
       </div>
     </section>
 
-    <!-- LOGIN -->
+    <!-- ================= LOGIN ================= -->
     <section id="login">
       <h1>Login</h1>
-      <p>Sign up or log in with email + password (styled to match your site).</p>
+      <!-- ✅ only the first part (no extra “styled to match…”) -->
+      <p>Sign up or log in with email + password.</p>
 
-      <div class="card login-card">
-        <div class="login-grid">
-          <div>
-            <label class="small" for="email">Email</label>
-            <input id="email" type="email" placeholder="you@example.com" autocomplete="username" />
+      <div class="loginWrap">
+        <div class="loginCard">
+          <div class="loginHeader">
+            <div class="loginIcon">AP</div>
+            <div>
+              <h2 style="margin:0; color:var(--accent);">Welcome back</h2>
+              <p class="small" style="margin:4px 0 0;">Log in to sync hubs, schedules, and chat.</p>
+            </div>
           </div>
-          <div>
-            <label class="small" for="password">Password</label>
-            <input id="password" type="password" placeholder="••••••••" autocomplete="current-password" />
+
+          <label for="email" class="small">Email</label>
+          <input id="email" type="email" placeholder="you@example.com" autocomplete="username" />
+
+          <label for="password" class="small" style="margin-top:10px;">Password</label>
+          <input id="password" type="password" placeholder="••••••••" autocomplete="current-password" />
+
+          <div class="row" style="margin-top:10px;">
+            <button id="googleBtn" class="btn ghost" type="button" style="flex:1;">Sign in with Google</button>
           </div>
-        </div>
 
-        <div class="row" style="margin-top:10px;">
-          <button id="loginBtn" class="btn primary" type="button">Log in</button>
-          <button id="signupBtn" class="btn ghost" type="button">Sign up</button>
-          <button id="googleBtn" class="btn ghost" type="button">Google</button>
-        </div>
+          <div class="row" style="margin-top:10px;">
+            <button id="signupBtn" class="btn ghost" type="button" style="flex:1;">Sign up</button>
+            <button id="loginBtn" class="btn primary" type="button" style="flex:1;">Log in</button>
+          </div>
 
-        <div class="row" style="margin-top:10px;">
-          <button id="resetBtn" class="btn ghost" type="button">Forgot password</button>
-          <button id="logoutBtn" class="btn danger" type="button" style="display:none;">Logout</button>
-        </div>
+          <div class="row" style="margin-top:10px;">
+            <button id="resetBtn" class="btn ghost" type="button" style="flex:1;">Forgot password</button>
+            <button id="logoutBtn" class="btn ghost" type="button" style="flex:1; display:none;">Logout</button>
+          </div>
 
-        <p id="msg" class="msg"></p>
-        <p class="tiny" id="status"></p>
+          <p id="msg" class="msg"></p>
+          <p class="tiny" id="status"></p>
+        </div>
       </div>
     </section>
   </main>
