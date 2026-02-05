@@ -859,51 +859,65 @@ const resFilter = document.getElementById("resFilter");
 const resList = document.getElementById("resList");
 const resEmpty = document.getElementById("resEmpty");
 
-const DEFAULT_RESOURCES = [ 
-College Board {cls:"Calc AB", title:"AP Calc AB (College Board)", url:"https://apstudents.collegeboard.org/courses/ap-calculus-ab"}, 
-{cls:"Calc BC", title:"AP Calc BC (College Board)", url:"https://apstudents.collegeboard.org/courses/ap-calculus-bc"},
-{cls:"Stats", title:"AP Statistics (College Board)", url:"https://apstudents.collegeboard.org/courses/ap-statistics"}, 
-{cls:"Precalc", title:"AP Precalculus (College Board)", url:"https://apstudents.collegeboard.org/courses/ap-precalculus"},
-{cls:"Physics 1", title:"AP Physics 1 (College Board)", url:"https://apstudents.collegeboard.org/courses/ap-physics-1"}, 
-{cls:"Physics 2", title:"AP Physics 2 (College Board)", url:"https://apstudents.collegeboard.org/courses/ap-physics-2"}, 
-{cls:"Physics C", title:"AP Physics C: Mechanics (College Board)", url:"https://apstudents.collegeboard.org/courses/ap-physics-c-mechanics"},
-{cls:"Physics C", title:"AP Physics C: E&M (College Board)", url:"https://apstudents.collegeboard.org/courses/ap-physics-c-electricity-and-magnetism"},
-{cls:"Chem", title:"AP Chemistry (College Board)", url:"https://apstudents.collegeboard.org/courses/ap-chemistry"}, 
-{cls:"Bio", title:"AP Biology (College Board)", url:"https://apstudents.collegeboard.org/courses/ap-biology"},
-{cls:"Env Sci", title:"AP Environmental Science (College Board)", url:"https://apstudents.collegeboard.org/courses/ap-environmental-science"},
-{cls:"Lang", title:"AP English Language (College Board)", url:"https://apstudents.collegeboard.org/courses/ap-english-language-and-composition"},
-{cls:"Lit", title:"AP English Literature (College Board)", url:"https://apstudents.collegeboard.org/courses/ap-english-literature-and-composition"},
-{cls:"APUSH", title:"AP US History (College Board)", url:"https://apstudents.collegeboard.org/courses/ap-united-states-history"},
-{cls:"World", title:"AP World History (College Board)", url:"https://apstudents.collegeboard.org/courses/ap-world-history-modern"}, 
-{cls:"Euro", title:"AP European History (College Board)", url:"https://apstudents.collegeboard.org/courses/ap-european-history"},
-{cls:"Gov", title:"AP US Government (College Board)", url:"https://apstudents.collegeboard.org/courses/ap-united-states-government-and-politics"}, 
-{cls:"Comp Gov", title:"AP Comparative Government (College Board)", url:"https://apstudents.collegeboard.org/courses/ap-comparative-government-and-politics"}, 
-{cls:"Econ", title:"AP Microeconomics (College Board)", url:"https://apstudents.collegeboard.org/courses/ap-microeconomics"}, 
-{cls:"Econ", title:"AP Macroeconomics (College Board)", url:"https://apstudents.collegeboard.org/courses/ap-macroeconomics"}, 
-{cls:"Psych", title:"AP Psychology (College Board)", url:"https://apstudents.collegeboard.org/courses/ap-psychology"},
-{cls:"HUGE", title:"AP Human Geography (College Board)", url:"https://apstudents.collegeboard.org/courses/ap-human-geography"}, 
-{cls:"CSA", title:"AP Computer Science A (College Board)", url:"https://apstudents.collegeboard.org/courses/ap-computer-science-a"},
-{cls:"CSP", title:"AP Computer Science Principles (College Board)", url:"https://apstudents.collegeboard.org/courses/ap-computer-science-principles"}, 
-{cls:"Seminar", title:"AP Seminar (College Board)", url:"https://apstudents.collegeboard.org/courses/ap-seminar"}, 
-{cls:"Research", title:"AP Research (College Board)", url:"https://apstudents.collegeboard.org/courses/ap-research"},
-{cls:"Art History", title:"AP Art History (College Board)", url:"https://apstudents.collegeboard.org/courses/ap-art-history"},
-{cls:"Art", title:"AP 2-D Art & Design (College Board)", url:"https://apstudents.collegeboard.org/courses/ap-2d-art-and-design"},
-{cls:"Art", title:"AP 3-D Art & Design (College Board)", url:"https://apstudents.collegeboard.org/courses/ap-3d-art-and-design"}, 
-{cls:"Art", title:"AP Drawing (College Board)", url:"https://apstudents.collegeboard.org/courses/ap-drawing"}, 
-{cls:"Music", title:"AP Music Theory (College Board)", url:"https://apstudents.collegeboard.org/courses/ap-music-theory"}, 
-Khan Academy (great quick practice) {cls:"Calc AB", title:"Khan Academy — Calc AB", url:"https://www.khanacademy.org/math/ap-calculus-ab"}, 
-{cls:"Calc BC", title:"Khan Academy — Calc BC", url:"https://www.khanacademy.org/math/ap-calculus-bc"}, 
-{cls:"Stats", title:"Khan Academy — Statistics", url:"https://www.khanacademy.org/math/statistics-probability"},
-{cls:"Physics 1", title:"Khan Academy — AP Physics 1", url:"https://www.khanacademy.org/science/ap-physics-1"}, 
-{cls:"Physics 2", title:"Khan Academy — AP Physics 2", url:"https://www.khanacademy.org/science/ap-physics-2"},
-{cls:"Chem", title:"Khan Academy — AP Chemistry", url:"https://www.khanacademy.org/science/ap-chemistry"}, 
-{cls:"Bio", title:"Khan Academy — AP Biology", url:"https://www.khanacademy.org/science/ap-biology"}, 
-{cls:"APUSH", title:"Khan Academy — AP US History", url:"https://www.khanacademy.org/humanities/ap-us-history"}, 
-{cls:"World", title:"Khan Academy — AP World History", url:"https://www.khanacademy.org/humanities/ap-world-history"},
-{cls:"Econ", title:"Khan Academy — Microeconomics", url:"https://www.khanacademy.org/economics-finance-domain/microeconomics"}, 
-{cls:"Econ", title:"Khan Academy — Macroeconomics", url:"https://www.khanacademy.org/economics-finance-domain/macroeconomics"}, 
-Strong YouTube helpers {cls:"APUSH", title:"Heimler’s History", url:"https://www.youtube.com/@heimlershistory"},
-{cls:"Chem", title:"Organic Chemistry Tutor", url:"https://www.youtube.com/@TheOrganicChemistryTutor"} ];
+const DEFAULT_RESOURCES = [
+  // College Board
+  {cls:"Calc AB", title:"AP Calc AB (College Board)", url:"https://apstudents.collegeboard.org/courses/ap-calculus-ab"},
+  {cls:"Calc BC", title:"AP Calc BC (College Board)", url:"https://apstudents.collegeboard.org/courses/ap-calculus-bc"},
+  {cls:"Stats", title:"AP Statistics (College Board)", url:"https://apstudents.collegeboard.org/courses/ap-statistics"},
+  {cls:"Precalc", title:"AP Precalculus (College Board)", url:"https://apstudents.collegeboard.org/courses/ap-precalculus"},
+
+  {cls:"Physics 1", title:"AP Physics 1 (College Board)", url:"https://apstudents.collegeboard.org/courses/ap-physics-1"},
+  {cls:"Physics 2", title:"AP Physics 2 (College Board)", url:"https://apstudents.collegeboard.org/courses/ap-physics-2"},
+  {cls:"Physics C", title:"AP Physics C: Mechanics (College Board)", url:"https://apstudents.collegeboard.org/courses/ap-physics-c-mechanics"},
+  {cls:"Physics C", title:"AP Physics C: E&M (College Board)", url:"https://apstudents.collegeboard.org/courses/ap-physics-c-electricity-and-magnetism"},
+
+  {cls:"Chem", title:"AP Chemistry (College Board)", url:"https://apstudents.collegeboard.org/courses/ap-chemistry"},
+  {cls:"Bio", title:"AP Biology (College Board)", url:"https://apstudents.collegeboard.org/courses/ap-biology"},
+  {cls:"Env Sci", title:"AP Environmental Science (College Board)", url:"https://apstudents.collegeboard.org/courses/ap-environmental-science"},
+
+  {cls:"Lang", title:"AP English Language (College Board)", url:"https://apstudents.collegeboard.org/courses/ap-english-language-and-composition"},
+  {cls:"Lit", title:"AP English Literature (College Board)", url:"https://apstudents.collegeboard.org/courses/ap-english-literature-and-composition"},
+
+  {cls:"APUSH", title:"AP US History (College Board)", url:"https://apstudents.collegeboard.org/courses/ap-united-states-history"},
+  {cls:"World", title:"AP World History (College Board)", url:"https://apstudents.collegeboard.org/courses/ap-world-history-modern"},
+  {cls:"Euro", title:"AP European History (College Board)", url:"https://apstudents.collegeboard.org/courses/ap-european-history"},
+
+  {cls:"Gov", title:"AP US Government (College Board)", url:"https://apstudents.collegeboard.org/courses/ap-united-states-government-and-politics"},
+  {cls:"Comp Gov", title:"AP Comparative Government (College Board)", url:"https://apstudents.collegeboard.org/courses/ap-comparative-government-and-politics"},
+  {cls:"Econ", title:"AP Microeconomics (College Board)", url:"https://apstudents.collegeboard.org/courses/ap-microeconomics"},
+  {cls:"Econ", title:"AP Macroeconomics (College Board)", url:"https://apstudents.collegeboard.org/courses/ap-macroeconomics"},
+  {cls:"Psych", title:"AP Psychology (College Board)", url:"https://apstudents.collegeboard.org/courses/ap-psychology"},
+  {cls:"HUGE", title:"AP Human Geography (College Board)", url:"https://apstudents.collegeboard.org/courses/ap-human-geography"},
+
+  {cls:"CSA", title:"AP Computer Science A (College Board)", url:"https://apstudents.collegeboard.org/courses/ap-computer-science-a"},
+  {cls:"CSP", title:"AP Computer Science Principles (College Board)", url:"https://apstudents.collegeboard.org/courses/ap-computer-science-principles"},
+
+  {cls:"Seminar", title:"AP Seminar (College Board)", url:"https://apstudents.collegeboard.org/courses/ap-seminar"},
+  {cls:"Research", title:"AP Research (College Board)", url:"https://apstudents.collegeboard.org/courses/ap-research"},
+
+  {cls:"Art History", title:"AP Art History (College Board)", url:"https://apstudents.collegeboard.org/courses/ap-art-history"},
+  {cls:"Art", title:"AP 2-D Art & Design (College Board)", url:"https://apstudents.collegeboard.org/courses/ap-2d-art-and-design"},
+  {cls:"Art", title:"AP 3-D Art & Design (College Board)", url:"https://apstudents.collegeboard.org/courses/ap-3d-art-and-design"},
+  {cls:"Art", title:"AP Drawing (College Board)", url:"https://apstudents.collegeboard.org/courses/ap-drawing"},
+  {cls:"Music", title:"AP Music Theory (College Board)", url:"https://apstudents.collegeboard.org/courses/ap-music-theory"},
+
+  // Khan Academy (great quick practice)
+  {cls:"Calc AB", title:"Khan Academy — Calc AB", url:"https://www.khanacademy.org/math/ap-calculus-ab"},
+  {cls:"Calc BC", title:"Khan Academy — Calc BC", url:"https://www.khanacademy.org/math/ap-calculus-bc"},
+  {cls:"Stats", title:"Khan Academy — Statistics", url:"https://www.khanacademy.org/math/statistics-probability"},
+  {cls:"Physics 1", title:"Khan Academy — AP Physics 1", url:"https://www.khanacademy.org/science/ap-physics-1"},
+  {cls:"Physics 2", title:"Khan Academy — AP Physics 2", url:"https://www.khanacademy.org/science/ap-physics-2"},
+  {cls:"Chem", title:"Khan Academy — AP Chemistry", url:"https://www.khanacademy.org/science/ap-chemistry"},
+  {cls:"Bio", title:"Khan Academy — AP Biology", url:"https://www.khanacademy.org/science/ap-biology"},
+  {cls:"APUSH", title:"Khan Academy — AP US History", url:"https://www.khanacademy.org/humanities/ap-us-history"},
+  {cls:"World", title:"Khan Academy — AP World History", url:"https://www.khanacademy.org/humanities/ap-world-history"},
+  {cls:"Econ", title:"Khan Academy — Microeconomics", url:"https://www.khanacademy.org/economics-finance-domain/microeconomics"},
+  {cls:"Econ", title:"Khan Academy — Macroeconomics", url:"https://www.khanacademy.org/economics-finance-domain/macroeconomics"},
+
+  // Strong YouTube helpers
+  {cls:"APUSH", title:"Heimler’s History", url:"https://www.youtube.com/@heimlershistory"},
+  {cls:"Chem", title:"Organic Chemistry Tutor", url:"https://www.youtube.com/@TheOrganicChemistryTutor"}
+];
 
 
 function resourcesKey(){ return currentUser ? `ap_resources_${currentUser.email}` : "ap_resources_guest"; }
