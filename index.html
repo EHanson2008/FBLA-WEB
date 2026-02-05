@@ -137,6 +137,21 @@
           <p class="small">Start a live session from a scheduled session, or join one below.</p>
           <div class="list" id="liveList"></div>
           <p class="small" id="liveEmpty">No live sessions right now.</p>
+          <hr style="border:none; border-top:1px solid var(--border); margin:14px 0;">
+
+<h2>Hub Messages</h2>
+<p class="small">Chat with everyone in your hub (shared in real-time).</p>
+
+<div class="list" id="chatList"></div>
+<p class="small" id="chatEmpty">No messages yet.</p>
+
+<div class="row" style="margin-top:10px;">
+  <input id="chatText" placeholder="Type a message..." style="flex:1; min-width:220px;" />
+  <button class="btn primary" id="sendChatBtn" type="button">Send</button>
+</div>
+
+<p class="msg" id="chatMsg"></p>
+
         </div>
       </div>
     </section>
@@ -275,6 +290,37 @@
             <p class="small" id="assignEmpty">No assignments yet.</p>
           </div>
         </div>
+        <hr style="border:none; border-top:1px solid var(--border); margin:14px 0;">
+
+<h2>Semester Grades</h2>
+<p class="small">Save your current class grade as Semester 1 / Semester 2, then calculate your final.</p>
+
+<div class="grid cols-3" style="margin-top:10px;">
+  <div class="card" style="background:var(--soft);">
+    <h3 style="margin:0 0 8px; font-size:16px;">Semester 1</h3>
+    <p class="small" id="sem1Text">—</p>
+    <button class="btn ghost" id="saveSem1Btn" type="button">Save current → S1</button>
+  </div>
+
+  <div class="card" style="background:var(--soft);">
+    <h3 style="margin:0 0 8px; font-size:16px;">Semester 2</h3>
+    <p class="small" id="sem2Text">—</p>
+    <button class="btn ghost" id="saveSem2Btn" type="button">Save current → S2</button>
+  </div>
+
+  <div class="card" style="background:var(--soft);">
+    <h3 style="margin:0 0 8px; font-size:16px;">Final</h3>
+    <p class="small" id="finalSemText">—</p>
+    <div class="row" style="margin-top:8px;">
+      <input id="semWeight1" type="number" min="0" max="100" placeholder="S1 weight (50)" style="max-width:160px;">
+      <input id="semWeight2" type="number" min="0" max="100" placeholder="S2 weight (50)" style="max-width:160px;">
+      <button class="btn primary" id="calcFinalBtn" type="button">Calculate</button>
+    </div>
+  </div>
+</div>
+
+<p class="msg" id="semMsg"></p>
+
       </div>
     </section>
 
