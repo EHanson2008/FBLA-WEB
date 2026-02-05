@@ -882,7 +882,9 @@ const DEFAULT_RESOURCES = [
   {cls:"Human Geo", title:"AP Human Geography (College Board)", url:"https://apstudents.collegeboard.org/courses/ap-human-geography"},
   {cls:"Gov", title:"AP US Gov (College Board)", url:"https://apstudents.collegeboard.org/courses/ap-united-states-government-and-politics"},
   {cls:"Comp Gov", title:"AP Comparative Gov (College Board)", url:"https://apstudents.collegeboard.org/courses/ap-comparative-government-and-politics"},
-  {cls:"All", title:"Heimler’s History (APUSH/World/Euro)", url:"https://www.youtube.com/@heimlershistory"},
+  {cls:"Euro", title:"Heimler’s History (APUSH/World/Euro)", url:"https://www.youtube.com/@heimlershistory"},
+  {cls:"World", title:"Heimler’s History (APUSH/World/Euro)", url:"https://www.youtube.com/@heimlershistory"},
+  {cls:"APUSH", title:"Heimler’s History (APUSH/World/Euro)", url:"https://www.youtube.com/@heimlershistory"},
 
   {cls:"Micro", title:"AP Microeconomics (College Board)", url:"https://apstudents.collegeboard.org/courses/ap-microeconomics"},
   {cls:"Macro", title:"AP Macroeconomics (College Board)", url:"https://apstudents.collegeboard.org/courses/ap-macroeconomics"},
