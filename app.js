@@ -1,6 +1,7 @@
+// ===================== app.js =====================
+
 // ---------- Tabs ----------
 const tabs = document.querySelectorAll(".tab");
-
 function showSection(id){
   document.querySelectorAll("main section").forEach(sec => sec.style.display = "none");
   const el = document.getElementById(id);
@@ -11,14 +12,12 @@ function showSection(id){
     else tab.removeAttribute("aria-current");
   });
 }
-
 tabs.forEach(tab => tab.addEventListener("click", () => {
   const id = tab.dataset.target;
   if (!id) return;
   showSection(id);
   history.replaceState(null, "", "#" + id);
 }));
-
 const initial = location.hash.replace("#","") || "home";
 showSection(document.getElementById(initial) ? initial : "home");
 
@@ -28,43 +27,44 @@ const LS = {
     try{ return JSON.parse(localStorage.getItem(key)) ?? fallback; }
     catch{ return fallback; }
   },
-  set(key, val){
-    localStorage.setItem(key, JSON.stringify(val));
-  }
+  set(key, val){ localStorage.setItem(key, JSON.stringify(val)); }
 };
 
-// ✅ ONE master AP class list used everywhere
+// ---------- AP Class List (used everywhere) ----------
 const AP_CLASSES = [
-  "Calc AB","Calc BC","Precalc","Stats",
+  "Calc AB","Calc BC",
   "Physics 1","Physics 2","Physics C",
-  "Chem","Bio","Env Sci",
-  "APUSH","World","Euro",
-  "Gov","Comp Gov",
-  "Econ","Psych","HUGE",
+  "Chem","Bio",
+  "APUSH","Euro","World",
+  "Gov","Econ Micro","Econ Macro",
   "Lang","Lit",
-  "CSA","CSP",
   "Seminar","Research",
-  "Art History","Art","Music",
+  "Human Geo","Psych","Comp Sci A","Comp Sci Principles",
+  "Stats","Art History","Art/2D/3D","Music Theory",
+  "Environmental","Spanish","French","German","Chinese","Japanese","Latin",
   "Other"
 ];
 
-function fillSelect(selectEl, keepFirst=false){
-  if (!selectEl) return;
-  const current = selectEl.value;
-  const first = keepFirst ? selectEl.querySelector("option") : null;
-
-  selectEl.innerHTML = "";
-  if (first) selectEl.appendChild(first);
-
-  AP_CLASSES.forEach(c => {
+function fillClassSelect(id, includeAll=false){
+  const el = document.getElementById(id);
+  if (!el) return;
+  el.innerHTML = "";
+  if (includeAll){
     const opt = document.createElement("option");
-    opt.value = c;
-    opt.textContent = c;
-    selectEl.appendChild(opt);
+    opt.value = "All"; opt.textContent = "All";
+    el.appendChild(opt);
+  }
+  AP_CLASSES.forEach(c => {
+    const o = document.createElement("option");
+    o.value = c; o.textContent = c;
+    el.appendChild(o);
   });
-
-  if ([...selectEl.options].some(o => o.value === current)) selectEl.value = current;
 }
+
+// fill all dropdowns
+fillClassSelect("taskClass", false);
+fillClassSelect("gradeClass", false);
+fillClassSelect("resFilter", true);
 
 // ---------- Demo auth state (local separation) ----------
 let currentUser = LS.get("ap_user", null); // {email}
@@ -74,10 +74,64 @@ function setUser(email){
   renderAll();
 }
 
-// Hook into login UI
+// ---------- Login streak (each day you login) ----------
+function loginStreakKey(){
+  const who = currentUser ? currentUser.email : "guest";
+  return `ap_loginStreak_${who}`;
+}
+function getLoginStreak(){ return LS.get(loginStreakKey(), {count:0,last:""}); }
+function saveLoginStreak(s){ LS.set(loginStreakKey(), s); }
+
+function bumpLoginStreak(){
+  const s = getLoginStreak();
+  const today = new Date();
+  const t = today.toISOString().slice(0,10);
+
+  if (s.last === t) return;
+
+  const y = new Date(today);
+  y.setDate(today.getDate()-1);
+  const yStr = y.toISOString().slice(0,10);
+
+  if (s.last === yStr) s.count += 1;
+  else s.count = 1;
+
+  s.last = t;
+  saveLoginStreak(s);
+}
+
+// ---------- Daily encouragement (click to reveal) ----------
+const encourageBtn = document.getElementById("encourageBtn");
+const encourageText = document.getElementById("encourageText");
+const ENCOURAGE = [
+  "Small steps still count — do one task and you’re moving.",
+  "You don’t need motivation. You need momentum. Start tiny.",
+  "Your future self is going to be so grateful you showed up today.",
+  "One focused session beats hours of stressed scrolling.",
+  "Progress > perfection. Do the next right thing.",
+  "Hard things get easier after you start, not before.",
+  "You’re building discipline — that’s the real flex."
+];
+function todayKey(){
+  const d = new Date();
+  return d.toISOString().slice(0,10);
+}
+function encouragementForToday(){
+  const k = todayKey();
+  let seed = 0;
+  for (let i=0;i<k.length;i++) seed += k.charCodeAt(i);
+  return ENCOURAGE[seed % ENCOURAGE.length];
+}
+if (encourageBtn){
+  encourageBtn.addEventListener("click", () => {
+    if (!encourageText) return;
+    encourageText.textContent = encouragementForToday();
+  });
+}
+
+// ---------- Login UI refs ----------
 const msg = document.getElementById("msg");
 const status = document.getElementById("status");
-const statusPill = document.getElementById("statusPill");
 const emailEl = document.getElementById("email");
 const passEl = document.getElementById("password");
 
@@ -106,25 +160,21 @@ function initFirebase(){
     firebase.auth().onAuthStateChanged((user) => {
       if (user){
         setUser(user.email);
+        bumpLoginStreak();
         if (status) status.textContent = "Logged in as: " + user.email;
-        if (statusPill) statusPill.textContent = "Logged in";
         if (logoutBtn) logoutBtn.style.display = "block";
       }else{
         setUser(null);
         if (status) status.textContent = "Not logged in.";
-        if (statusPill) statusPill.textContent = "Not logged in";
         if (logoutBtn) logoutBtn.style.display = "none";
       }
 
-      // ✅ keep resources from “disappearing” between guest/user
-      ensureDefaultResources();
-
-      // realtime pieces
       updateHubStatus();
-      startScheduleListener();
-      startLiveListener();
+      startHubRealtime(); // schedule + live + chat
+      renderHomeWidgets();
     });
   }catch(e){
+    console.error(e);
     fbReady = false;
   }
 }
@@ -142,7 +192,6 @@ async function realSignup(){
     setMsg(err.message || "Signup failed.", false);
   }
 }
-
 async function realLogin(){
   if (!fbReady){ setMsg("Firebase not configured yet.", false); return; }
   const email = emailEl.value.trim();
@@ -154,7 +203,6 @@ async function realLogin(){
     setMsg(err.message || "Login failed.", false);
   }
 }
-
 async function googleSignIn(){
   if (!fbReady){ setMsg("Firebase not configured yet.", false); return; }
   try{
@@ -166,7 +214,6 @@ async function googleSignIn(){
     setMsg(err.message || "Google sign-in failed.", false);
   }
 }
-
 async function realReset(){
   if (!fbReady){ setMsg("Firebase not configured yet.", false); return; }
   const email = emailEl.value.trim();
@@ -177,7 +224,6 @@ async function realReset(){
     setMsg(err.message || "Reset failed.", false);
   }
 }
-
 async function realLogout(){
   if (!fbReady){ setMsg("Firebase not configured yet.", false); return; }
   await firebase.auth().signOut();
@@ -192,7 +238,7 @@ if (logoutBtn) logoutBtn.addEventListener("click", realLogout);
 if (passEl) passEl.addEventListener("keydown", (e) => { if (e.key === "Enter") realLogin(); });
 
 // ==============================
-// SHARED HUB
+// ✅ SHARED HUB (schedule sharing)
 // ==============================
 const createHubBtn = document.getElementById("createHubBtn");
 const joinHubBtn = document.getElementById("joinHubBtn");
@@ -221,15 +267,13 @@ async function createHub(){
   const ref = db.collection("hubs").doc();
   await ref.set({
     createdAt: firebase.firestore.FieldValue.serverTimestamp(),
-    createdBy: uid,                 // ✅ matches your improved rules
     members: [uid],
     name: "AP Learning Hub"
   });
 
   setHubId(ref.id);
   updateHubStatus();
-  startScheduleListener();
-  startLiveListener();
+  startHubRealtime();
   alert("Hub created! Share this code: " + ref.id);
 }
 
@@ -251,46 +295,43 @@ async function joinHub(code){
 
   setHubId(ref.id);
   updateHubStatus();
-  startScheduleListener();
-  startLiveListener();
+  startHubRealtime();
   alert("Joined hub!");
 }
 
 function leaveHub(){
   setHubId("");
   updateHubStatus();
-  startScheduleListener();
-  startLiveListener();
+  startHubRealtime();
 }
 
 if (createHubBtn) createHubBtn.addEventListener("click", createHub);
 if (joinHubBtn) joinHubBtn.addEventListener("click", () => joinHub(hubCodeEl?.value || ""));
 if (leaveHubBtn) leaveHubBtn.addEventListener("click", leaveHub);
 
-updateHubStatus();
-
-// ==============================
-// SCHEDULE (shared or local)
-// ==============================
+// ---------- Schedule ----------
 const sessTitle = document.getElementById("sessTitle");
 const sessDate  = document.getElementById("sessDate");
 const sessTime  = document.getElementById("sessTime");
 const sessNotes = document.getElementById("sessNotes");
+const sessVideo = document.getElementById("sessVideo");
+
 const addSessionBtn = document.getElementById("addSessionBtn");
 const clearSessionsBtn = document.getElementById("clearSessionsBtn");
 const scheduleMsg = document.getElementById("scheduleMsg");
 const sessionList = document.getElementById("sessionList");
 const sessionEmpty = document.getElementById("sessionEmpty");
 
+// local schedule fallback
+function sessionsKey(){ return currentUser ? `ap_sessions_${currentUser.email}` : "ap_sessions_guest"; }
+function getSessionsLocal(){ return LS.get(sessionsKey(), []); }
+function saveSessionsLocal(list){ LS.set(sessionsKey(), list); }
+
 function setScheduleMsg(text, ok=false){
   if (!scheduleMsg) return;
   scheduleMsg.textContent = text;
   scheduleMsg.className = ok ? "msg ok" : "msg";
 }
-
-function sessionsKey(){ return currentUser ? `ap_sessions_${currentUser.email}` : "ap_sessions_guest"; }
-function getSessionsLocal(){ return LS.get(sessionsKey(), []); }
-function saveSessionsLocal(list){ LS.set(sessionsKey(), list); }
 
 let unsubSessions = null;
 
@@ -319,7 +360,7 @@ function startScheduleListener(){
       renderHomeWidgets();
     }, (err) => {
       console.error(err);
-      setScheduleMsg("Schedule error (check Firestore rules + hub membership).", false);
+      setScheduleMsg(`Schedule error: ${err.code || ""} ${err.message || err}`, false);
     });
 }
 
@@ -335,11 +376,14 @@ function renderSessionsFromData(sessions){
 
     const idAttr = (s.id != null) ? `data-id="${s.id}"` : `data-local="${s._localId}"`;
 
+    const vid = s.video ? `<div class="meta"><a href="${s.video}" target="_blank" rel="noopener">Open video link</a></div>` : "";
+
     div.innerHTML = `
       <div>
         <strong>${escapeHtml(s.title || "")}</strong>
         <div class="meta">${escapeHtml(s.date || "")} at ${escapeHtml(s.time || "")}</div>
         ${s.notes ? `<div class="meta">${escapeHtml(s.notes)}</div>` : ""}
+        ${vid}
       </div>
       <div class="row">
         <button class="btn primary" data-action="start-live" ${idAttr} type="button">Start live</button>
@@ -355,6 +399,7 @@ async function addSession(){
   const date = sessDate?.value || "";
   const time = sessTime?.value || "";
   const notes = (sessNotes?.value || "").trim();
+  const video = (sessVideo?.value || "").trim();
 
   if (!title || !date || !time){
     setScheduleMsg("Please enter title, date, and time.", false);
@@ -365,14 +410,14 @@ async function addSession(){
     const hubId = getHubId();
     const dateTime = new Date(`${date}T${time}:00`);
     await db.collection("hubs").doc(hubId).collection("sessions").add({
-      title, date, time, notes,
+      title, date, time, notes, video,
       dateTime: firebase.firestore.Timestamp.fromDate(dateTime),
       createdAt: firebase.firestore.FieldValue.serverTimestamp()
     });
     setScheduleMsg("Session added (shared)!", true);
   }else{
     const sessions = getSessionsLocal();
-    sessions.push({ title, date, time, notes });
+    sessions.push({ title, date, time, notes, video });
     saveSessionsLocal(sessions);
     setScheduleMsg("Session added (local)!", true);
     renderAll();
@@ -380,6 +425,7 @@ async function addSession(){
 
   if (sessTitle) sessTitle.value = "";
   if (sessNotes) sessNotes.value = "";
+  if (sessVideo) sessVideo.value = "";
 }
 
 async function clearSessions(){
@@ -437,7 +483,7 @@ if (sessionList){
 }
 
 // ==============================
-// LIVE SESSIONS
+// ✅ LIVE SESSIONS
 // ==============================
 const liveList = document.getElementById("liveList");
 const liveEmpty = document.getElementById("liveEmpty");
@@ -446,17 +492,20 @@ let unsubLive = null;
 function renderLive(lives){
   if (!liveList) return;
   liveList.innerHTML = "";
+
   if (liveEmpty) liveEmpty.style.display = lives.length ? "none" : "block";
 
   lives.forEach(l => {
     const div = document.createElement("div");
     div.className = "item";
     const count = l.participants ? Object.keys(l.participants).length : 0;
+    const video = l.video ? `<div class="meta"><a href="${l.video}" target="_blank" rel="noopener">Open video link</a></div>` : "";
 
     div.innerHTML = `
       <div style="flex:1;">
         <strong>${escapeHtml(l.title || "Live Study")}</strong>
         <div class="meta">Participants: ${count}</div>
+        ${video}
       </div>
       <div class="row">
         <button class="btn primary" data-action="join-live" data-id="${l.id}" type="button">Join</button>
@@ -483,7 +532,9 @@ function startLiveListener(){
       const lives = [];
       qs.forEach(doc => lives.push({ id: doc.id, ...doc.data() }));
       renderLive(lives);
-    }, (err) => console.error(err));
+    }, (err) => {
+      console.error("Live listener error:", err);
+    });
 }
 
 async function startLiveSession(sessionId){
@@ -494,13 +545,13 @@ async function startLiveSession(sessionId){
   const sRef = db.collection("hubs").doc(hubId).collection("sessions").doc(sessionId);
   const sSnap = await sRef.get();
   if (!sSnap.exists) return;
-
   const s = sSnap.data();
 
   const liveRef = db.collection("hubs").doc(hubId).collection("liveSessions").doc();
   await liveRef.set({
     active: true,
     title: s.title || "Study Session",
+    video: s.video || "",
     hostUid: user.uid,
     startedAt: firebase.firestore.FieldValue.serverTimestamp(),
     participants: { [user.uid]: user.email || "host" }
@@ -543,14 +594,115 @@ async function endLiveSession(liveId){
 document.addEventListener("click", async (e) => {
   const btn = e.target.closest("button");
   if (!btn) return;
-
   if (btn.dataset.action === "join-live") await joinLiveSession(btn.dataset.id);
   if (btn.dataset.action === "end-live") await endLiveSession(btn.dataset.id);
 });
 
 // ==============================
-// TASKS
+// ✅ HUB CHAT
 // ==============================
+const chatList = document.getElementById("chatList");
+const chatEmpty = document.getElementById("chatEmpty");
+const chatText = document.getElementById("chatText");
+const sendChatBtn = document.getElementById("sendChatBtn");
+const chatMsg = document.getElementById("chatMsg");
+let unsubChat = null;
+
+function setChatMsg(text, ok=false){
+  if (!chatMsg) return;
+  chatMsg.textContent = text;
+  chatMsg.className = ok ? "msg ok" : "msg";
+}
+
+function renderChat(messages){
+  if (!chatList) return;
+  chatList.innerHTML = "";
+  if (chatEmpty) chatEmpty.style.display = messages.length ? "none" : "block";
+
+  messages.forEach(m => {
+    const div = document.createElement("div");
+    div.className = "item";
+    const when = m.createdAt?.toDate ? m.createdAt.toDate() : null;
+    const stamp = when ? when.toLocaleString() : "";
+
+    div.innerHTML = `
+      <div style="flex:1;">
+        <strong>${escapeHtml(m.sender || "Member")}</strong>
+        <div class="meta">${escapeHtml(stamp)}</div>
+        <div class="meta" style="margin-top:6px;">${escapeHtml(m.text || "")}</div>
+      </div>
+    `;
+    chatList.appendChild(div);
+  });
+}
+
+function startChatListener(){
+  if (unsubChat){ unsubChat(); unsubChat = null; }
+
+  if (!chatList || !chatText || !sendChatBtn){
+    console.warn("Chat UI missing: check ids chatList/chatText/sendChatBtn");
+    return;
+  }
+
+  if (!usingHub()){
+    renderChat([]);
+    setChatMsg("Chat works inside a hub (log in + join/create hub).", false);
+    return;
+  }
+
+  const hubId = getHubId();
+  unsubChat = db.collection("hubs").doc(hubId)
+    .collection("chat")
+    .orderBy("createdAt", "asc")
+    .limit(200)
+    .onSnapshot((qs) => {
+      const msgs = [];
+      qs.forEach(doc => msgs.push({ id: doc.id, ...doc.data() }));
+      renderChat(msgs);
+      setChatMsg("", true);
+    }, (err) => {
+      console.error("Chat error:", err);
+      setChatMsg(`Chat error: ${err.code || ""} ${err.message || err}`, false);
+    });
+}
+
+async function sendChat(){
+  if (!usingHub()){
+    setChatMsg("Log in and join a hub to use chat.", false);
+    return;
+  }
+  const text = (chatText?.value || "").trim();
+  if (!text) return;
+
+  const hubId = getHubId();
+  const user = firebase.auth().currentUser;
+
+  try{
+    await db.collection("hubs").doc(hubId).collection("chat").add({
+      text,
+      sender: user?.email || "member",
+      uid: user?.uid || "",
+      createdAt: firebase.firestore.FieldValue.serverTimestamp()
+    });
+    if (chatText) chatText.value = "";
+    setChatMsg("", true);
+  }catch(e){
+    console.error(e);
+    setChatMsg(`Could not send: ${e.code || ""} ${e.message || e}`, false);
+  }
+}
+
+if (sendChatBtn) sendChatBtn.addEventListener("click", sendChat);
+if (chatText) chatText.addEventListener("keydown", (e) => { if (e.key === "Enter") sendChat(); });
+
+// one place to start all realtime hub features
+function startHubRealtime(){
+  startScheduleListener();
+  startLiveListener();
+  startChatListener();
+}
+
+// ---------- Dashboard (Tasks) ----------
 const taskText = document.getElementById("taskText");
 const taskClass = document.getElementById("taskClass");
 const taskDue = document.getElementById("taskDue");
@@ -600,12 +752,10 @@ function bumpStreak(){
   const s = getStreak();
   const today = new Date();
   const todayStr = today.toISOString().slice(0,10);
-
   if (s.lastDone === todayStr) return;
 
-  const yesterday = new Date(today);
-  yesterday.setDate(today.getDate() - 1);
-  const yStr = yesterday.toISOString().slice(0,10);
+  const y = new Date(today); y.setDate(today.getDate()-1);
+  const yStr = y.toISOString().slice(0,10);
 
   if (s.lastDone === yStr) s.count += 1;
   else s.count = 1;
@@ -618,11 +768,7 @@ function addTask(){
   const text = (taskText?.value || "").trim();
   const cls = taskClass?.value || "Other";
   const due = taskDue?.value || "";
-
-  if (!text){
-    setDashMsg("Type a task first.", false);
-    return;
-  }
+  if (!text){ setDashMsg("Type a task first.", false); return; }
 
   const tasks = getTasks();
   tasks.push({ text, cls, due, done:false, created: new Date().toISOString() });
@@ -663,7 +809,6 @@ function renderTasks(){
 
   const tasks = getTasks();
   taskList.innerHTML = "";
-
   if (taskEmpty) taskEmpty.style.display = tasks.length ? "none" : "block";
 
   tasks.forEach((t, idx) => {
@@ -708,101 +853,65 @@ if (taskList){
   });
 }
 
-// ==============================
-// RESOURCES (RESTORED + EXPANDED)
-// ==============================
+// ---------- Resources ----------
 const resSearch = document.getElementById("resSearch");
 const resFilter = document.getElementById("resFilter");
 const resList = document.getElementById("resList");
 const resEmpty = document.getElementById("resEmpty");
 
-// ✅ Expanded defaults (College Board + Khan + a few strong channels)
-const DEFAULT_RESOURCES = [
-  // College Board
-  {cls:"Calc AB", title:"AP Calc AB (College Board)", url:"https://apstudents.collegeboard.org/courses/ap-calculus-ab"},
-  {cls:"Calc BC", title:"AP Calc BC (College Board)", url:"https://apstudents.collegeboard.org/courses/ap-calculus-bc"},
-  {cls:"Stats", title:"AP Statistics (College Board)", url:"https://apstudents.collegeboard.org/courses/ap-statistics"},
-  {cls:"Precalc", title:"AP Precalculus (College Board)", url:"https://apstudents.collegeboard.org/courses/ap-precalculus"},
+const DEFAULT_RESOURCES = [ 
+College Board {cls:"Calc AB", title:"AP Calc AB (College Board)", url:"https://apstudents.collegeboard.org/courses/ap-calculus-ab"}, 
+{cls:"Calc BC", title:"AP Calc BC (College Board)", url:"https://apstudents.collegeboard.org/courses/ap-calculus-bc"},
+{cls:"Stats", title:"AP Statistics (College Board)", url:"https://apstudents.collegeboard.org/courses/ap-statistics"}, 
+{cls:"Precalc", title:"AP Precalculus (College Board)", url:"https://apstudents.collegeboard.org/courses/ap-precalculus"},
+{cls:"Physics 1", title:"AP Physics 1 (College Board)", url:"https://apstudents.collegeboard.org/courses/ap-physics-1"}, 
+{cls:"Physics 2", title:"AP Physics 2 (College Board)", url:"https://apstudents.collegeboard.org/courses/ap-physics-2"}, 
+{cls:"Physics C", title:"AP Physics C: Mechanics (College Board)", url:"https://apstudents.collegeboard.org/courses/ap-physics-c-mechanics"},
+{cls:"Physics C", title:"AP Physics C: E&M (College Board)", url:"https://apstudents.collegeboard.org/courses/ap-physics-c-electricity-and-magnetism"},
+{cls:"Chem", title:"AP Chemistry (College Board)", url:"https://apstudents.collegeboard.org/courses/ap-chemistry"}, 
+{cls:"Bio", title:"AP Biology (College Board)", url:"https://apstudents.collegeboard.org/courses/ap-biology"},
+{cls:"Env Sci", title:"AP Environmental Science (College Board)", url:"https://apstudents.collegeboard.org/courses/ap-environmental-science"},
+{cls:"Lang", title:"AP English Language (College Board)", url:"https://apstudents.collegeboard.org/courses/ap-english-language-and-composition"},
+{cls:"Lit", title:"AP English Literature (College Board)", url:"https://apstudents.collegeboard.org/courses/ap-english-literature-and-composition"},
+{cls:"APUSH", title:"AP US History (College Board)", url:"https://apstudents.collegeboard.org/courses/ap-united-states-history"},
+{cls:"World", title:"AP World History (College Board)", url:"https://apstudents.collegeboard.org/courses/ap-world-history-modern"}, 
+{cls:"Euro", title:"AP European History (College Board)", url:"https://apstudents.collegeboard.org/courses/ap-european-history"},
+{cls:"Gov", title:"AP US Government (College Board)", url:"https://apstudents.collegeboard.org/courses/ap-united-states-government-and-politics"}, 
+{cls:"Comp Gov", title:"AP Comparative Government (College Board)", url:"https://apstudents.collegeboard.org/courses/ap-comparative-government-and-politics"}, 
+{cls:"Econ", title:"AP Microeconomics (College Board)", url:"https://apstudents.collegeboard.org/courses/ap-microeconomics"}, 
+{cls:"Econ", title:"AP Macroeconomics (College Board)", url:"https://apstudents.collegeboard.org/courses/ap-macroeconomics"}, 
+{cls:"Psych", title:"AP Psychology (College Board)", url:"https://apstudents.collegeboard.org/courses/ap-psychology"},
+{cls:"HUGE", title:"AP Human Geography (College Board)", url:"https://apstudents.collegeboard.org/courses/ap-human-geography"}, 
+{cls:"CSA", title:"AP Computer Science A (College Board)", url:"https://apstudents.collegeboard.org/courses/ap-computer-science-a"},
+{cls:"CSP", title:"AP Computer Science Principles (College Board)", url:"https://apstudents.collegeboard.org/courses/ap-computer-science-principles"}, 
+{cls:"Seminar", title:"AP Seminar (College Board)", url:"https://apstudents.collegeboard.org/courses/ap-seminar"}, 
+{cls:"Research", title:"AP Research (College Board)", url:"https://apstudents.collegeboard.org/courses/ap-research"},
+{cls:"Art History", title:"AP Art History (College Board)", url:"https://apstudents.collegeboard.org/courses/ap-art-history"},
+{cls:"Art", title:"AP 2-D Art & Design (College Board)", url:"https://apstudents.collegeboard.org/courses/ap-2d-art-and-design"},
+{cls:"Art", title:"AP 3-D Art & Design (College Board)", url:"https://apstudents.collegeboard.org/courses/ap-3d-art-and-design"}, 
+{cls:"Art", title:"AP Drawing (College Board)", url:"https://apstudents.collegeboard.org/courses/ap-drawing"}, 
+{cls:"Music", title:"AP Music Theory (College Board)", url:"https://apstudents.collegeboard.org/courses/ap-music-theory"}, 
+Khan Academy (great quick practice) {cls:"Calc AB", title:"Khan Academy — Calc AB", url:"https://www.khanacademy.org/math/ap-calculus-ab"}, 
+{cls:"Calc BC", title:"Khan Academy — Calc BC", url:"https://www.khanacademy.org/math/ap-calculus-bc"}, 
+{cls:"Stats", title:"Khan Academy — Statistics", url:"https://www.khanacademy.org/math/statistics-probability"},
+{cls:"Physics 1", title:"Khan Academy — AP Physics 1", url:"https://www.khanacademy.org/science/ap-physics-1"}, 
+{cls:"Physics 2", title:"Khan Academy — AP Physics 2", url:"https://www.khanacademy.org/science/ap-physics-2"},
+{cls:"Chem", title:"Khan Academy — AP Chemistry", url:"https://www.khanacademy.org/science/ap-chemistry"}, 
+{cls:"Bio", title:"Khan Academy — AP Biology", url:"https://www.khanacademy.org/science/ap-biology"}, 
+{cls:"APUSH", title:"Khan Academy — AP US History", url:"https://www.khanacademy.org/humanities/ap-us-history"}, 
+{cls:"World", title:"Khan Academy — AP World History", url:"https://www.khanacademy.org/humanities/ap-world-history"},
+{cls:"Econ", title:"Khan Academy — Microeconomics", url:"https://www.khanacademy.org/economics-finance-domain/microeconomics"}, 
+{cls:"Econ", title:"Khan Academy — Macroeconomics", url:"https://www.khanacademy.org/economics-finance-domain/macroeconomics"}, 
+Strong YouTube helpers {cls:"APUSH", title:"Heimler’s History", url:"https://www.youtube.com/@heimlershistory"},
+{cls:"Chem", title:"Organic Chemistry Tutor", url:"https://www.youtube.com/@TheOrganicChemistryTutor"} ];
 
-  {cls:"Physics 1", title:"AP Physics 1 (College Board)", url:"https://apstudents.collegeboard.org/courses/ap-physics-1"},
-  {cls:"Physics 2", title:"AP Physics 2 (College Board)", url:"https://apstudents.collegeboard.org/courses/ap-physics-2"},
-  {cls:"Physics C", title:"AP Physics C: Mechanics (College Board)", url:"https://apstudents.collegeboard.org/courses/ap-physics-c-mechanics"},
-  {cls:"Physics C", title:"AP Physics C: E&M (College Board)", url:"https://apstudents.collegeboard.org/courses/ap-physics-c-electricity-and-magnetism"},
-
-  {cls:"Chem", title:"AP Chemistry (College Board)", url:"https://apstudents.collegeboard.org/courses/ap-chemistry"},
-  {cls:"Bio", title:"AP Biology (College Board)", url:"https://apstudents.collegeboard.org/courses/ap-biology"},
-  {cls:"Env Sci", title:"AP Environmental Science (College Board)", url:"https://apstudents.collegeboard.org/courses/ap-environmental-science"},
-
-  {cls:"Lang", title:"AP English Language (College Board)", url:"https://apstudents.collegeboard.org/courses/ap-english-language-and-composition"},
-  {cls:"Lit", title:"AP English Literature (College Board)", url:"https://apstudents.collegeboard.org/courses/ap-english-literature-and-composition"},
-
-  {cls:"APUSH", title:"AP US History (College Board)", url:"https://apstudents.collegeboard.org/courses/ap-united-states-history"},
-  {cls:"World", title:"AP World History (College Board)", url:"https://apstudents.collegeboard.org/courses/ap-world-history-modern"},
-  {cls:"Euro", title:"AP European History (College Board)", url:"https://apstudents.collegeboard.org/courses/ap-european-history"},
-
-  {cls:"Gov", title:"AP US Government (College Board)", url:"https://apstudents.collegeboard.org/courses/ap-united-states-government-and-politics"},
-  {cls:"Comp Gov", title:"AP Comparative Government (College Board)", url:"https://apstudents.collegeboard.org/courses/ap-comparative-government-and-politics"},
-  {cls:"Econ", title:"AP Microeconomics (College Board)", url:"https://apstudents.collegeboard.org/courses/ap-microeconomics"},
-  {cls:"Econ", title:"AP Macroeconomics (College Board)", url:"https://apstudents.collegeboard.org/courses/ap-macroeconomics"},
-  {cls:"Psych", title:"AP Psychology (College Board)", url:"https://apstudents.collegeboard.org/courses/ap-psychology"},
-  {cls:"HUGE", title:"AP Human Geography (College Board)", url:"https://apstudents.collegeboard.org/courses/ap-human-geography"},
-
-  {cls:"CSA", title:"AP Computer Science A (College Board)", url:"https://apstudents.collegeboard.org/courses/ap-computer-science-a"},
-  {cls:"CSP", title:"AP Computer Science Principles (College Board)", url:"https://apstudents.collegeboard.org/courses/ap-computer-science-principles"},
-
-  {cls:"Seminar", title:"AP Seminar (College Board)", url:"https://apstudents.collegeboard.org/courses/ap-seminar"},
-  {cls:"Research", title:"AP Research (College Board)", url:"https://apstudents.collegeboard.org/courses/ap-research"},
-
-  {cls:"Art History", title:"AP Art History (College Board)", url:"https://apstudents.collegeboard.org/courses/ap-art-history"},
-  {cls:"Art", title:"AP 2-D Art & Design (College Board)", url:"https://apstudents.collegeboard.org/courses/ap-2d-art-and-design"},
-  {cls:"Art", title:"AP 3-D Art & Design (College Board)", url:"https://apstudents.collegeboard.org/courses/ap-3d-art-and-design"},
-  {cls:"Art", title:"AP Drawing (College Board)", url:"https://apstudents.collegeboard.org/courses/ap-drawing"},
-  {cls:"Music", title:"AP Music Theory (College Board)", url:"https://apstudents.collegeboard.org/courses/ap-music-theory"},
-
-  // Khan Academy (great quick practice)
-  {cls:"Calc AB", title:"Khan Academy — Calc AB", url:"https://www.khanacademy.org/math/ap-calculus-ab"},
-  {cls:"Calc BC", title:"Khan Academy — Calc BC", url:"https://www.khanacademy.org/math/ap-calculus-bc"},
-  {cls:"Stats", title:"Khan Academy — Statistics", url:"https://www.khanacademy.org/math/statistics-probability"},
-  {cls:"Physics 1", title:"Khan Academy — AP Physics 1", url:"https://www.khanacademy.org/science/ap-physics-1"},
-  {cls:"Physics 2", title:"Khan Academy — AP Physics 2", url:"https://www.khanacademy.org/science/ap-physics-2"},
-  {cls:"Chem", title:"Khan Academy — AP Chemistry", url:"https://www.khanacademy.org/science/ap-chemistry"},
-  {cls:"Bio", title:"Khan Academy — AP Biology", url:"https://www.khanacademy.org/science/ap-biology"},
-  {cls:"APUSH", title:"Khan Academy — AP US History", url:"https://www.khanacademy.org/humanities/ap-us-history"},
-  {cls:"World", title:"Khan Academy — AP World History", url:"https://www.khanacademy.org/humanities/ap-world-history"},
-  {cls:"Econ", title:"Khan Academy — Microeconomics", url:"https://www.khanacademy.org/economics-finance-domain/microeconomics"},
-  {cls:"Econ", title:"Khan Academy — Macroeconomics", url:"https://www.khanacademy.org/economics-finance-domain/macroeconomics"},
-
-  // Strong YouTube helpers
-  {cls:"APUSH", title:"Heimler’s History", url:"https://www.youtube.com/@heimlershistory"},
-  {cls:"Chem", title:"Organic Chemistry Tutor", url:"https://www.youtube.com/@TheOrganicChemistryTutor"}
-];
 
 function resourcesKey(){ return currentUser ? `ap_resources_${currentUser.email}` : "ap_resources_guest"; }
-function getResources(){ return LS.get(resourcesKey(), []); }
+function getResources(){ return LS.get(resourcesKey(), DEFAULT_RESOURCES); }
 function saveResources(list){ LS.set(resourcesKey(), list); }
-
-function mergeUniqueResources(into, add){
-  const seen = new Set(into.map(r => `${(r.cls||"")}|${(r.title||"")}|${(r.url||"")}`));
-  add.forEach(r => {
-    const k = `${(r.cls||"")}|${(r.title||"")}|${(r.url||"")}`;
-    if (!seen.has(k)){
-      into.push(r);
-      seen.add(k);
-    }
-  });
-  return into;
-}
-
-// ✅ makes sure defaults are always “back”
-function ensureDefaultResources(){
-  const existing = getResources();
-  const combined = mergeUniqueResources(existing.slice(), DEFAULT_RESOURCES);
-  saveResources(combined);
-}
 
 function renderResources(){
   if (!resList) return;
-
   const q = (resSearch?.value || "").toLowerCase().trim();
   const filt = resFilter?.value || "All";
 
@@ -834,76 +943,22 @@ function renderResources(){
 if (resSearch) resSearch.addEventListener("input", renderResources);
 if (resFilter) resFilter.addEventListener("change", renderResources);
 
-// ==============================
-// HOME WIDGETS + DAILY BOOST
-// ==============================
+// ---------- Home widgets ----------
 const userPill = document.getElementById("userPill");
+const loginStreakPill = document.getElementById("loginStreakPill");
 const todayFocus = document.getElementById("todayFocus");
 const upcomingSession = document.getElementById("upcomingSession");
 const progressBar = document.getElementById("progressBar");
 const progressText = document.getElementById("progressText");
 
-const boostBtn = document.getElementById("boostBtn");
-const boostText = document.getElementById("boostText");
-const boostPill = document.getElementById("boostPill");
-
-const BOOSTS = [
-  "You don’t need motivation — you need momentum. Do 10 minutes.",
-  "Small progress still counts. One task today is a win.",
-  "Lock in for 25 minutes. Future-you will thank you.",
-  "You’re closer than you think. Start with the easiest problem.",
-  "Done beats perfect. Ship the work.",
-  "You can do hard things — but only if you start."
-];
-
-function todayStr(){ return new Date().toISOString().slice(0,10); }
-function boostKey(){
-  const who = currentUser ? currentUser.email : "guest";
-  return `ap_boost_${who}`;
-}
-
-function getBoostForToday(){
-  const saved = LS.get(boostKey(), null);
-  if (saved && saved.date === todayStr()) return saved;
-
-  const pick = BOOSTS[Math.floor(Math.random() * BOOSTS.length)];
-  const obj = { date: todayStr(), text: pick, unlocked:false };
-  LS.set(boostKey(), obj);
-  return obj;
-}
-
-function renderBoostCard(){
-  if (!boostText || !boostBtn || !boostPill) return;
-
-  const b = getBoostForToday();
-
-  if (!b.unlocked){
-    boostText.textContent = "Tap for today’s encouragement.";
-    boostBtn.textContent = "Activate";
-    boostPill.style.display = "none";
-  }else{
-    boostText.textContent = b.text;
-    boostBtn.textContent = "Refresh";
-    boostPill.style.display = "inline-flex";
-  }
-}
-
-if (boostBtn){
-  boostBtn.addEventListener("click", () => {
-    const b = getBoostForToday();
-    if (!b.unlocked){
-      b.unlocked = true;
-    }else{
-      b.text = BOOSTS[Math.floor(Math.random() * BOOSTS.length)];
-    }
-    LS.set(boostKey(), b);
-    renderBoostCard();
-  });
-}
-
 function renderHomeWidgets(){
   if (userPill){
     userPill.textContent = currentUser ? `Logged in: ${currentUser.email}` : "Not logged in";
+  }
+
+  const ls = getLoginStreak();
+  if (loginStreakPill){
+    loginStreakPill.textContent = `Login streak: ${ls.count}`;
   }
 
   const tasks = getTasks();
@@ -912,7 +967,6 @@ function renderHomeWidgets(){
     todayFocus.textContent = nextTask ? `${nextTask.text} (${nextTask.cls})` : "No tasks — add one in Dashboard!";
   }
 
-  // local fallback upcoming session
   const sessions = getSessionsLocal().slice().sort((a,b) => (a.date+a.time).localeCompare(b.date+b.time));
   const up = sessions[0];
   if (upcomingSession){
@@ -924,13 +978,18 @@ function renderHomeWidgets(){
   const pct = total ? Math.round((done/total)*100) : 0;
   if (progressBar) progressBar.style.width = pct + "%";
   if (progressText) progressText.textContent = `${pct}% complete`;
-
-  renderBoostCard();
 }
 
-// ==============================
-// CHARTS
-// ==============================
+// ---------- Charts ----------
+const studyMinutesEl = document.getElementById("studyMinutes");
+const addStudyBtn = document.getElementById("addStudyBtn");
+const clearStudyBtn = document.getElementById("clearStudyBtn");
+const studyTotalText = document.getElementById("studyTotalText");
+
+function studyKey(){ return currentUser ? `ap_study_${currentUser.email}` : "ap_study_guest"; }
+function getStudy(){ return LS.get(studyKey(), {}); }
+function saveStudy(obj){ LS.set(studyKey(), obj); }
+
 function daysBack(n){
   const arr = [];
   const d = new Date();
@@ -942,15 +1001,6 @@ function daysBack(n){
   }
   return arr;
 }
-
-const studyMinutesEl = document.getElementById("studyMinutes");
-const addStudyBtn = document.getElementById("addStudyBtn");
-const clearStudyBtn = document.getElementById("clearStudyBtn");
-const studyTotalText = document.getElementById("studyTotalText");
-
-function studyKey(){ return currentUser ? `ap_study_${currentUser.email}` : "ap_study_guest"; }
-function getStudy(){ return LS.get(studyKey(), {}); }
-function saveStudy(obj){ LS.set(studyKey(), obj); }
 
 function drawBarChart(canvas, labels, values){
   if (!canvas) return;
@@ -997,7 +1047,9 @@ function renderCharts(){
   }
 
   const tasks = getTasks();
-  const doneCounts = days.map(d => tasks.filter(t => t.done && t.doneDate === d).length);
+  const doneCounts = days.map(d =>
+    tasks.filter(t => t.done && t.doneDate === d).length
+  );
   drawBarChart(tasksChart, short, doneCounts);
 }
 
@@ -1022,9 +1074,7 @@ if (clearStudyBtn){
   });
 }
 
-// ==============================
-// GRADES (your original grade tracker kept)
-// ==============================
+// ---------- Grades ----------
 const gradeClassEl = document.getElementById("gradeClass");
 const wSummEl = document.getElementById("wSumm");
 const wFormEl = document.getElementById("wForm");
@@ -1092,7 +1142,6 @@ function calcCurrentGrade(block){
 
 function renderGrades(){
   if (!gradeClassEl) return;
-
   const cls = gradeClassEl.value;
   const { data, block } = getClassBlock(cls);
 
@@ -1142,7 +1191,7 @@ function renderGrades(){
   }
 }
 
-if (gradeClassEl) gradeClassEl.addEventListener("change", () => { setGradeMsg("", true); renderGrades(); });
+if (gradeClassEl) gradeClassEl.addEventListener("change", () => { setGradeMsg("", true); renderGrades(); renderSemesterUI(); });
 
 if (saveWeightsBtn){
   saveWeightsBtn.addEventListener("click", () => {
@@ -1161,105 +1210,6 @@ if (saveWeightsBtn){
     saveGradeData(data);
     setGradeMsg("Weights saved!", true);
     renderGrades();
-  });
-}
-// ==============================
-// ✅ SEMESTER GRADES (Newest Grade Calculator)
-// ==============================
-const saveSem1Btn = document.getElementById("saveSem1Btn");
-const saveSem2Btn = document.getElementById("saveSem2Btn");
-const sem1Text = document.getElementById("sem1Text");
-const sem2Text = document.getElementById("sem2Text");
-const finalSemText = document.getElementById("finalSemText");
-const semWeight1 = document.getElementById("semWeight1");
-const semWeight2 = document.getElementById("semWeight2");
-const calcFinalBtn = document.getElementById("calcFinalBtn");
-const semMsg = document.getElementById("semMsg");
-
-function setSemMsg(text, ok=false){
-  if (!semMsg) return;
-  semMsg.textContent = text;
-  semMsg.className = ok ? "msg ok" : "msg";
-}
-
-function semKey(){
-  const who = currentUser ? currentUser.email : "guest";
-  return `ap_semesters_${who}`;
-}
-
-function getSemData(){ return LS.get(semKey(), {}); }
-function saveSemData(obj){ LS.set(semKey(), obj); }
-
-function getSemBlock(cls){
-  const data = getSemData();
-  if (!data[cls]) data[cls] = { s1:null, s2:null };
-  return { data, block: data[cls] };
-}
-
-function renderSemesterUI(){
-  if (!gradeClassEl) return;
-  const cls = gradeClassEl.value;
-  const { block } = getSemBlock(cls);
-
-  if (sem1Text) sem1Text.textContent = (block.s1 == null) ? "—" : `${Number(block.s1).toFixed(1)}%`;
-  if (sem2Text) sem2Text.textContent = (block.s2 == null) ? "—" : `${Number(block.s2).toFixed(1)}%`;
-
-  if (finalSemText) finalSemText.textContent = "—";
-  setSemMsg("", true);
-}
-
-function saveSemester(which){
-  if (!gradeClassEl) return;
-  const cls = gradeClassEl.value;
-  const { data, block } = getSemBlock(cls);
-
-  const { block: gradeBlock } = getClassBlock(cls);
-  const current = calcCurrentGrade(gradeBlock);
-
-  if (current == null){
-    setSemMsg("No current grade yet. Add weights + assignments first.", false);
-    return;
-  }
-
-  if (which === "s1") block.s1 = Number(current);
-  if (which === "s2") block.s2 = Number(current);
-
-  data[cls] = block;
-  saveSemData(data);
-  setSemMsg(`Saved ${cls} current grade to ${which.toUpperCase()}!`, true);
-  renderSemesterUI();
-}
-
-function calcFinalSemester(){
-  if (!gradeClassEl) return;
-  const cls = gradeClassEl.value;
-  const { block } = getSemBlock(cls);
-
-  if (block.s1 == null || block.s2 == null){
-    setSemMsg("Save both Semester 1 and Semester 2 first.", false);
-    return;
-  }
-
-  const w1 = Number(semWeight1?.value || 50);
-  const w2 = Number(semWeight2?.value || 50);
-  if (w1 + w2 !== 100){
-    setSemMsg("Weights must add to 100 (ex: 50 + 50).", false);
-    return;
-  }
-
-  const final = (block.s1 * w1 + block.s2 * w2) / 100;
-  if (finalSemText) finalSemText.textContent = `${final.toFixed(1)}%`;
-  setSemMsg("Final calculated!", true);
-}
-
-if (saveSem1Btn) saveSem1Btn.addEventListener("click", () => saveSemester("s1"));
-if (saveSem2Btn) saveSem2Btn.addEventListener("click", () => saveSemester("s2"));
-if (calcFinalBtn) calcFinalBtn.addEventListener("click", calcFinalSemester);
-
-// When you change class, update semester display too:
-if (gradeClassEl){
-  gradeClassEl.addEventListener("change", () => {
-    renderSemesterUI();
   });
 }
 
@@ -1341,7 +1291,6 @@ if (needNextBtn){
       needNextText.textContent = "Summative weight is 0 — next summ won’t matter.";
       return;
     }
-
     const desiredSummAvg = (100*target - wf*(baseForm ?? 0)) / ws;
 
     let x;
@@ -1357,140 +1306,131 @@ if (needNextBtn){
 }
 
 // ==============================
-// Utilities
+// ✅ SEMESTER GRADES (S1 + S2 + EXAM)
 // ==============================
+const saveSem1Btn = document.getElementById("saveSem1Btn");
+const saveSem2Btn = document.getElementById("saveSem2Btn");
+const sem1Text = document.getElementById("sem1Text");
+const sem2Text = document.getElementById("sem2Text");
+const finalSemText = document.getElementById("finalSemText");
+
+const semWeight1 = document.getElementById("semWeight1");
+const semWeight2 = document.getElementById("semWeight2");
+const examWeight = document.getElementById("examWeight");
+const examGrade = document.getElementById("examGrade");
+const calcFinalBtn = document.getElementById("calcFinalBtn");
+const semMsg = document.getElementById("semMsg");
+
+function setSemMsg(text, ok=false){
+  if (!semMsg) return;
+  semMsg.textContent = text;
+  semMsg.className = ok ? "msg ok" : "msg";
+}
+
+function semKey(){
+  const who = currentUser ? currentUser.email : "guest";
+  return `ap_semesters_${who}`;
+}
+function getSemData(){ return LS.get(semKey(), {}); }
+function saveSemData(obj){ LS.set(semKey(), obj); }
+
+function getSemBlock(cls){
+  const data = getSemData();
+  if (!data[cls]) data[cls] = { s1:null, s2:null };
+  return { data, block: data[cls] };
+}
+
+function renderSemesterUI(){
+  if (!gradeClassEl) return;
+  const cls = gradeClassEl.value;
+  const { block } = getSemBlock(cls);
+
+  if (sem1Text) sem1Text.textContent = (block.s1 == null) ? "—" : `${Number(block.s1).toFixed(1)}%`;
+  if (sem2Text) sem2Text.textContent = (block.s2 == null) ? "—" : `${Number(block.s2).toFixed(1)}%`;
+
+  if (finalSemText) finalSemText.textContent = "—";
+  setSemMsg("", true);
+}
+
+function saveSemester(which){
+  if (!gradeClassEl) return;
+  const cls = gradeClassEl.value;
+  const { data, block } = getSemBlock(cls);
+
+  const { block: gradeBlock } = getClassBlock(cls);
+  const current = calcCurrentGrade(gradeBlock);
+
+  if (current == null){
+    setSemMsg("No current grade yet. Add weights + assignments first.", false);
+    return;
+  }
+
+  if (which === "s1") block.s1 = Number(current);
+  if (which === "s2") block.s2 = Number(current);
+
+  data[cls] = block;
+  saveSemData(data);
+  setSemMsg(`Saved ${cls} current grade to ${which.toUpperCase()}!`, true);
+  renderSemesterUI();
+}
+
+function calcFinalSemester(){
+  if (!gradeClassEl) return;
+  const cls = gradeClassEl.value;
+  const { block } = getSemBlock(cls);
+
+  if (block.s1 == null || block.s2 == null){
+    setSemMsg("Save both Semester 1 and Semester 2 first.", false);
+    return;
+  }
+
+  const w1 = Number(semWeight1?.value || 40);
+  const w2 = Number(semWeight2?.value || 40);
+  const we = Number(examWeight?.value || 20);
+
+  if (w1 + w2 + we !== 100){
+    setSemMsg("Weights must add to 100 (ex: 40 + 40 + 20).", false);
+    return;
+  }
+
+  const ex = Number(examGrade?.value || "");
+  if (Number.isNaN(ex)){
+    setSemMsg("Enter the semester exam grade.", false);
+    return;
+  }
+  if (ex < 0 || ex > 100){
+    setSemMsg("Exam grade must be 0–100.", false);
+    return;
+  }
+
+  const final = (block.s1 * w1 + block.s2 * w2 + ex * we) / 100;
+  if (finalSemText) finalSemText.textContent = `${final.toFixed(1)}%`;
+  setSemMsg("Final calculated!", true);
+}
+
+if (saveSem1Btn) saveSem1Btn.addEventListener("click", () => saveSemester("s1"));
+if (saveSem2Btn) saveSem2Btn.addEventListener("click", () => saveSemester("s2"));
+if (calcFinalBtn) calcFinalBtn.addEventListener("click", calcFinalSemester);
+
+// ---------- Utilities ----------
 function escapeHtml(s){
   return String(s).replace(/[&<>"']/g, (c) => ({
     "&":"&amp;", "<":"&lt;", ">":"&gt;", '"':"&quot;", "'":"&#39;"
   }[c]));
 }
-
 function formatDateTime(dateStr, timeStr){
   if (!dateStr || !timeStr) return "";
   return `${dateStr} at ${timeStr}`;
 }
-// ==============================
-// ✅ HUB CHAT (Messaging Area)
-// ==============================
-const chatList = document.getElementById("chatList");
-const chatEmpty = document.getElementById("chatEmpty");
-const chatText = document.getElementById("chatText");
-const sendChatBtn = document.getElementById("sendChatBtn");
-const chatMsg = document.getElementById("chatMsg");
 
-let unsubChat = null;
-
-function setChatMsg(text, ok=false){
-  if (!chatMsg) return;
-  chatMsg.textContent = text;
-  chatMsg.className = ok ? "msg ok" : "msg";
-}
-
-function renderChat(messages){
-  if (!chatList) return;
-  chatList.innerHTML = "";
-
-  if (chatEmpty) chatEmpty.style.display = messages.length ? "none" : "block";
-
-  messages.forEach(m => {
-    const div = document.createElement("div");
-    div.className = "item";
-    const when = m.createdAt?.toDate ? m.createdAt.toDate() : null;
-    const stamp = when ? when.toLocaleString() : "";
-
-    div.innerHTML = `
-      <div style="flex:1;">
-        <strong>${escapeHtml(m.sender || "Member")}</strong>
-        <div class="meta">${escapeHtml(stamp)}</div>
-        <div class="meta" style="margin-top:6px;">${escapeHtml(m.text || "")}</div>
-      </div>
-    `;
-    chatList.appendChild(div);
-  });
-}
-
-function startChatListener(){
-  if (unsubChat){ unsubChat(); unsubChat = null; }
-
-  if (!usingHub()){
-    renderChat([]);
-    return;
-  }
-
-  const hubId = getHubId();
-
-  unsubChat = db.collection("hubs").doc(hubId)
-    .collection("chat")
-    .orderBy("createdAt", "asc")
-    .limit(200)
-    .onSnapshot((qs) => {
-      const msgs = [];
-      qs.forEach(doc => msgs.push({ id: doc.id, ...doc.data() }));
-      renderChat(msgs);
-    }, (err) => {
-      console.error(err);
-      setChatMsg("Chat error (check Firestore rules + hub membership).", false);
-    });
-}
-
-async function sendChat(){
-  if (!usingHub()){
-    setChatMsg("Log in and join a hub to use chat.", false);
-    return;
-  }
-  const text = (chatText?.value || "").trim();
-  if (!text) return;
-
-  const hubId = getHubId();
-  const user = firebase.auth().currentUser;
-
-  try{
-    await db.collection("hubs").doc(hubId).collection("chat").add({
-      text,
-      sender: user?.email || "member",
-      uid: user?.uid || "",
-      createdAt: firebase.firestore.FieldValue.serverTimestamp()
-    });
-    if (chatText) chatText.value = "";
-    setChatMsg("", true);
-  }catch(e){
-    console.error(e);
-    setChatMsg("Could not send message.", false);
-  }
-}
-
-if (sendChatBtn) sendChatBtn.addEventListener("click", sendChat);
-if (chatText) chatText.addEventListener("keydown", (e) => { if (e.key === "Enter") sendChat(); });
-
-// ✅ IMPORTANT: hook chat into hub changes
-// You already call updateHubStatus(), startScheduleListener(), startLiveListener() on auth changes.
-// We also need chat:
-function startHubRealtime(){
-  startHubRealtime();
-  startChatListener();
-}
-
-// ==============================
-// Render all
-// ==============================
+// ---------- Render all ----------
 function renderAll(){
-  // ✅ fill dropdowns from one AP list
-  fillSelect(document.getElementById("taskClass"));
-  fillSelect(document.getElementById("gradeClass"));
-  fillSelect(document.getElementById("resFilter"), true); // keeps "All"
-
-  ensureDefaultResources();
-
   renderTasks();
   renderResources();
   renderHomeWidgets();
   renderCharts();
   renderGrades();
   renderSemesterUI();
-
-
-  startScheduleListener();
-  startLiveListener();
+  startHubRealtime();
 }
-
 renderAll();
