@@ -1,22 +1,23 @@
+/* style.css */
 :root{
   /* PAGE */
-  --bg:#ffffff;              /* daylight white */
+  --bg:#ffffff;
 
   /* BOXES */
-  --card:#e9f2ff;            /* bright light blue */
-  --soft:#dbeaff;            /* slightly deeper blue */
+  --card:#e9f2ff;
+  --soft:#dbeaff;
 
   /* TEXT */
-  --text:#0b1f3a;            /* dark blue text EVERYWHERE */
+  --text:#0b1f3a;
   --muted:#2f4b73;
 
   /* STRUCTURE */
-  --border:#1e3a8a;          /* strong dark blue lines */
+  --border:#1e3a8a;
   --shadow:none;
 
   /* ACCENTS */
-  --accent:#1e3a8a;          /* dark blue */
-  --accent2:#ffdd55;         /* sunshine yellow */
+  --accent:#1e3a8a;
+  --accent2:#ffdd55;
 
   /* STATES */
   --danger:#b00020;
@@ -66,9 +67,7 @@ body{
   color:var(--text);
 }
 
-.tab:hover{
-  background:var(--accent2);
-}
+.tab:hover{ background:var(--accent2); }
 
 .tab[aria-current="page"]{
   background:var(--accent);
@@ -92,15 +91,12 @@ h1{
 
 p{
   margin:0 0 12px;
-  color:var(--text);   /* DARK BLUE TEXT */
+  color:var(--text);
   line-height:1.5;
 }
 
 /* ===== GRID ===== */
-.grid{
-  display:grid;
-  gap:14px;
-}
+.grid{ display:grid; gap:14px; }
 
 @media (min-width:900px){
   .grid.cols-2{ grid-template-columns:1.2fr .8fr; }
@@ -129,9 +125,7 @@ p{
   align-items:center;
 }
 
-input,
-select,
-textarea{
+input, select, textarea{
   width:100%;
   padding:10px 12px;
   border-radius:4px;
@@ -141,9 +135,9 @@ textarea{
   color:var(--text);
 }
 
-input:focus,
-select:focus,
-textarea:focus{
+textarea{ resize:vertical; }
+
+input:focus, select:focus, textarea:focus{
   box-shadow:0 0 0 3px rgba(255,221,85,.7);
 }
 
@@ -167,12 +161,6 @@ textarea:focus{
   color:var(--text);
 }
 
-.btn.danger{
-  background:var(--danger);
-  color:#ffffff;
-  border:2px solid var(--danger);
-}
-
 /* ===== LISTS ===== */
 .list{
   display:flex;
@@ -191,14 +179,8 @@ textarea:focus{
   border-radius:6px;
 }
 
-.item strong{
-  color:var(--accent);
-}
-
-.item .meta{
-  font-size:13px;
-  color:var(--text);
-}
+.item strong{ color:var(--accent); }
+.item .meta{ font-size:13px; color:var(--text); }
 
 /* ===== PROGRESS ===== */
 .progress{
@@ -216,20 +198,14 @@ textarea:focus{
 }
 
 /* ===== SMALL TEXT ===== */
-.small{
-  font-size:12px;
-  color:var(--text);
-}
+.small{ font-size:12px; color:var(--text); }
 
 .msg{
   margin-top:10px;
   font-size:13px;
   color:var(--danger);
 }
-
-.msg.ok{
-  color:#0a7a0a;
-}
+.msg.ok{ color:#0a7a0a; }
 
 /* ===== HERO ===== */
 .hero{
@@ -245,10 +221,7 @@ textarea:focus{
   color:var(--accent);
 }
 
-.hero p{
-  max-width:65ch;
-  color:var(--text);
-}
+.hero p{ max-width:65ch; color:var(--text); }
 
 /* ===== PILLS ===== */
 .pill{
