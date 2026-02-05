@@ -1,23 +1,25 @@
-/* style.css */
+/* =========================
+   style.css (FULL)
+========================= */
 :root{
   /* PAGE */
-  --bg:#ffffff;
+  --bg:#ffffff;              /* daylight white */
 
   /* BOXES */
-  --card:#e9f2ff;
-  --soft:#dbeaff;
+  --card:#e9f2ff;            /* bright light blue */
+  --soft:#dbeaff;            /* slightly deeper blue */
 
   /* TEXT */
-  --text:#0b1f3a;
+  --text:#0b1f3a;            /* dark blue text EVERYWHERE */
   --muted:#2f4b73;
 
   /* STRUCTURE */
-  --border:#1e3a8a;
+  --border:#1e3a8a;          /* strong dark blue lines */
   --shadow:none;
 
   /* ACCENTS */
-  --accent:#1e3a8a;
-  --accent2:#ffdd55;
+  --accent:#1e3a8a;          /* dark blue */
+  --accent2:#ffdd55;         /* sunshine yellow */
 
   /* STATES */
   --danger:#b00020;
@@ -32,7 +34,7 @@ body{
   color:var(--text);
 }
 
-/* TOP BAR */
+/* ===== TOP BAR ===== */
 .topbar{
   position: sticky;
   top: 0;
@@ -56,7 +58,7 @@ body{
 .nav{ display:flex; gap:10px; flex-wrap:wrap; }
 .spacer{ flex:1; }
 
-/* NAV TABS */
+/* ===== NAV TABS (BOXES) ===== */
 .tab{
   padding:8px 12px;
   border-radius:4px;
@@ -74,7 +76,7 @@ body{
   color:#ffffff;
 }
 
-/* MAIN */
+/* ===== MAIN ===== */
 main{
   max-width:1100px;
   margin:0 auto;
@@ -95,7 +97,7 @@ p{
   line-height:1.5;
 }
 
-/* GRID */
+/* ===== GRID ===== */
 .grid{ display:grid; gap:14px; }
 
 @media (min-width:900px){
@@ -103,7 +105,7 @@ p{
   .grid.cols-3{ grid-template-columns:repeat(3,1fr); }
 }
 
-/* CARDS */
+/* ===== CARDS / BOXES ===== */
 .card{
   background:var(--card);
   border:2px solid var(--accent);
@@ -117,7 +119,7 @@ p{
   color:var(--accent);
 }
 
-/* FORMS */
+/* ===== FORMS ===== */
 .row{
   display:flex;
   gap:10px;
@@ -139,32 +141,33 @@ input:focus, select:focus, textarea:focus{
   box-shadow:0 0 0 3px rgba(255,221,85,.7);
 }
 
-/* BUTTONS */
+/* ===== BUTTONS ===== */
 .btn{
   border-radius:4px;
   padding:10px 12px;
   font-weight:800;
   cursor:pointer;
-  border:2px solid var(--accent);
 }
 
 .btn.primary{
   background:var(--accent2);
   color:var(--text);
+  border:2px solid var(--accent);
 }
 
 .btn.ghost{
   background:var(--card);
+  border:2px solid var(--accent);
   color:var(--text);
 }
 
 .btn.danger{
   background:var(--danger);
-  border-color:var(--danger);
   color:#ffffff;
+  border:2px solid var(--danger);
 }
 
-/* LISTS */
+/* ===== LISTS ===== */
 .list{
   display:flex;
   flex-direction:column;
@@ -183,9 +186,13 @@ input:focus, select:focus, textarea:focus{
 }
 
 .item strong{ color:var(--accent); }
-.item .meta{ font-size:13px; color:var(--text); }
 
-/* PROGRESS */
+.item .meta{
+  font-size:13px;
+  color:var(--text);
+}
+
+/* ===== PROGRESS ===== */
 .progress{
   height:10px;
   background:#c7dbff;
@@ -200,7 +207,7 @@ input:focus, select:focus, textarea:focus{
   background:var(--accent2);
 }
 
-/* SMALL TEXT */
+/* ===== SMALL TEXT ===== */
 .small{ font-size:12px; color:var(--text); }
 
 .msg{
@@ -211,14 +218,7 @@ input:focus, select:focus, textarea:focus{
 
 .msg.ok{ color:#0a7a0a; }
 
-.tiny{
-  margin-top:10px;
-  font-size:12px;
-  color:var(--muted);
-  line-height:1.35;
-}
-
-/* HERO */
+/* ===== HERO ===== */
 .hero{
   padding:18px;
   background:var(--soft);
@@ -234,7 +234,7 @@ input:focus, select:focus, textarea:focus{
 
 .hero p{ max-width:65ch; color:var(--text); }
 
-/* PILLS */
+/* ===== PILLS ===== */
 .pill{
   display:inline-flex;
   align-items:center;
@@ -248,12 +248,69 @@ input:focus, select:focus, textarea:focus{
   font-size:12px;
 }
 
-/* ✅ LOGIN (matches site) */
-.login-card{ max-width:760px; }
-.login-grid{
-  display:grid;
-  gap:10px;
+/* ===== CHAT ===== */
+.chatBox{
+  height:260px;
+  overflow:auto;
+  background:#ffffff;
+  border:2px solid var(--accent);
+  border-radius:6px;
+  padding:10px;
 }
-@media (min-width:900px){
-  .login-grid{ grid-template-columns:1fr 1fr; }
+
+.chatMsg{
+  padding:10px;
+  border:2px solid var(--accent);
+  background:var(--soft);
+  border-radius:6px;
+  margin-bottom:10px;
+}
+
+.chatMeta{
+  font-size:12px;
+  color:var(--muted);
+  margin-top:6px;
+}
+
+.chatImg{
+  margin-top:8px;
+  width:100%;
+  max-width:420px;
+  border-radius:6px;
+  border:2px solid var(--accent);
+  display:block;
+}
+
+/* ===== LOGIN (prettier + matches site) ===== */
+.loginWrap{
+  display:grid;
+  place-items:center;
+  margin-top:12px;
+}
+
+.loginCard{
+  width:min(520px, 96vw);
+  background:var(--card);
+  border:2px solid var(--accent);
+  border-radius:10px;
+  padding:18px;
+}
+
+.loginHeader{
+  display:flex;
+  align-items:center;
+  gap:12px;
+  margin-bottom:12px;
+}
+
+.loginIcon{
+  width:44px;
+  height:44px;
+  border-radius:8px;
+  border:2px solid var(--accent);
+  background:var(--accent2);
+  display:grid;
+  place-items:center;
+  font-weight:900;
+  color:var(--text);
 }
