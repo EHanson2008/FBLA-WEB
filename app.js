@@ -1,59 +1,5 @@
 // app.js
 
-// ==============================
-// ✅ ALL AP CLASSES (used everywhere)
-// ==============================
-const ALL_AP_CLASSES = [
-  "All",
-  "Calc AB",
-  "Calc BC",
-  "Stats",
-  "Physics 1",
-  "Physics 2",
-  "Physics C",
-  "Chem",
-  "Bio",
-  "Environmental Science",
-  "CSP",
-  "CSA",
-  "APUSH",
-  "World",
-  "Euro",
-  "Human Geo",
-  "Gov",
-  "Comp Gov",
-  "Micro",
-  "Macro",
-  "Lang",
-  "Lit",
-  "Psych",
-  "Seminar",
-  "Research",
-  "Art History",
-  "Music Theory",
-  "Studio Art",
-  "French",
-  "Spanish Lang",
-  "Spanish Lit",
-  "German",
-  "Italian",
-  "Latin",
-  "Chinese",
-  "Japanese",
-  "Other"
-];
-
-function fillSelect(selectEl, items, includeAll=false){
-  if (!selectEl) return;
-  selectEl.innerHTML = "";
-  items.forEach(v => {
-    const opt = document.createElement("option");
-    opt.value = v;
-    opt.textContent = v;
-    selectEl.appendChild(opt);
-  });
-}
-
 // ---------- Tabs ----------
 const tabs = document.querySelectorAll(".tab");
 
@@ -89,7 +35,7 @@ const LS = {
   }
 };
 
-// ---------- Demo auth state ----------
+// ---------- Demo auth state (used for local data keys) ----------
 let currentUser = LS.get("ap_user", null); // {email}
 function setUser(email){
   currentUser = email ? {email} : null;
@@ -129,7 +75,7 @@ function initFirebase(){
       if (user){
         setUser(user.email);
         if (status) status.textContent = "Logged in as: " + user.email;
-        if (logoutBtn) logoutBtn.style.display = "block";
+        if (logoutBtn) logoutBtn.style.display = "inline-block";
       }else{
         setUser(null);
         if (status) status.textContent = "Not logged in.";
@@ -139,12 +85,9 @@ function initFirebase(){
       updateHubStatus();
       startScheduleListener();
       startLiveListener();
-      startChatListener();
-      startNotesListener();
     });
   }catch(e){
     fbReady = false;
-    console.error("Firebase init error:", e);
   }
 }
 initFirebase();
@@ -176,7 +119,6 @@ async function realLogin(){
 
 async function googleSignIn(){
   if (!fbReady){ setMsg("Firebase not configured yet.", false); return; }
-
   try{
     const provider = new firebase.auth.GoogleAuthProvider();
     provider.setCustomParameters({ prompt: "select_account" });
@@ -186,8 +128,6 @@ async function googleSignIn(){
     setMsg(err.message || "Google sign-in failed.", false);
   }
 }
-
-if (googleBtn) googleBtn.addEventListener("click", googleSignIn);
 
 async function realReset(){
   if (!fbReady){ setMsg("Firebase not configured yet.", false); return; }
@@ -208,9 +148,11 @@ async function realLogout(){
 
 if (signupBtn) signupBtn.addEventListener("click", realSignup);
 if (loginBtn)  loginBtn.addEventListener("click", realLogin);
+if (googleBtn) googleBtn.addEventListener("click", googleSignIn);
 if (resetBtn)  resetBtn.addEventListener("click", realReset);
 if (logoutBtn) logoutBtn.addEventListener("click", realLogout);
 if (passEl) passEl.addEventListener("keydown", (e) => { if (e.key === "Enter") realLogin(); });
+
 
 // ==============================
 // ✅ SHARED HUB (schedule sharing)
@@ -234,12 +176,18 @@ function updateHubStatus(){
   hubStatus.textContent = hubId ? `Hub: ${hubId}` : "No hub selected";
 }
 
+function usingHub(){
+  const hubId = getHubId();
+  const user = firebase.auth().currentUser;
+  return !!(fbReady && db && hubId && user);
+}
+
 async function createHub(){
   if (!fbReady || !db){ alert("Firebase not ready"); return; }
   const uid = firebase.auth().currentUser?.uid;
   if (!uid){ alert("Log in first"); return; }
 
-  const ref = db.collection("hubs").doc(); // share code
+  const ref = db.collection("hubs").doc();
   await ref.set({
     createdAt: firebase.firestore.FieldValue.serverTimestamp(),
     members: [uid],
@@ -250,8 +198,6 @@ async function createHub(){
   updateHubStatus();
   startScheduleListener();
   startLiveListener();
-  startChatListener();
-  startNotesListener();
   alert("Hub created! Share this code: " + ref.id);
 }
 
@@ -275,8 +221,6 @@ async function joinHub(code){
   updateHubStatus();
   startScheduleListener();
   startLiveListener();
-  startChatListener();
-  startNotesListener();
   alert("Joined hub!");
 }
 
@@ -285,8 +229,6 @@ function leaveHub(){
   updateHubStatus();
   startScheduleListener();
   startLiveListener();
-  startChatListener();
-  startNotesListener();
 }
 
 if (createHubBtn) createHubBtn.addEventListener("click", createHub);
@@ -295,18 +237,19 @@ if (leaveHubBtn) leaveHubBtn.addEventListener("click", leaveHub);
 
 updateHubStatus();
 
+
 // ---------- Schedule ----------
 const sessTitle = document.getElementById("sessTitle");
 const sessDate  = document.getElementById("sessDate");
 const sessTime  = document.getElementById("sessTime");
 const sessNotes = document.getElementById("sessNotes");
+const sessVideo = document.getElementById("sessVideo"); // ✅ ADDED
 const addSessionBtn = document.getElementById("addSessionBtn");
 const clearSessionsBtn = document.getElementById("clearSessionsBtn");
 const scheduleMsg = document.getElementById("scheduleMsg");
 const sessionList = document.getElementById("sessionList");
 const sessionEmpty = document.getElementById("sessionEmpty");
 
-// Local fallback schedule
 function sessionsKey(){ return currentUser ? `ap_sessions_${currentUser.email}` : "ap_sessions_guest"; }
 function getSessionsLocal(){ return LS.get(sessionsKey(), []); }
 function saveSessionsLocal(list){ LS.set(sessionsKey(), list); }
@@ -317,13 +260,8 @@ function setScheduleMsg(text, ok=false){
   scheduleMsg.className = ok ? "msg ok" : "msg";
 }
 
+// ✅ Realtime Firestore schedule listener
 let unsubSessions = null;
-
-function usingHub(){
-  const hubId = getHubId();
-  const user = firebase.auth().currentUser;
-  return !!(fbReady && db && hubId && user);
-}
 
 function startScheduleListener(){
   if (unsubSessions){ unsubSessions(); unsubSessions = null; }
@@ -360,10 +298,15 @@ function renderSessionsFromData(sessions){
 
     const idAttr = (s.id != null) ? `data-id="${s.id}"` : `data-local="${s._localId}"`;
 
+    const videoHtml = s.videoUrl
+      ? `<div class="meta">Video: <a href="${escapeHtml(s.videoUrl)}" target="_blank" rel="noopener">Open</a></div>`
+      : "";
+
     div.innerHTML = `
       <div>
         <strong>${escapeHtml(s.title || "")}</strong>
         <div class="meta">${escapeHtml(s.date || "")} at ${escapeHtml(s.time || "")}</div>
+        ${videoHtml}
         ${s.notes ? `<div class="meta">${escapeHtml(s.notes)}</div>` : ""}
       </div>
       <div class="row">
@@ -375,11 +318,20 @@ function renderSessionsFromData(sessions){
   });
 }
 
+function safeUrl(u){
+  const s = String(u || "").trim();
+  if (!s) return "";
+  // allow http/https only (basic safety)
+  if (/^https?:\/\//i.test(s)) return s;
+  return "";
+}
+
 async function addSession(){
   const title = (sessTitle?.value || "").trim();
   const date = sessDate?.value || "";
   const time = sessTime?.value || "";
   const notes = (sessNotes?.value || "").trim();
+  const videoUrl = safeUrl(sessVideo?.value || "");
 
   if (!title || !date || !time){
     setScheduleMsg("Please enter title, date, and time.", false);
@@ -391,13 +343,14 @@ async function addSession(){
     const dateTime = new Date(`${date}T${time}:00`);
     await db.collection("hubs").doc(hubId).collection("sessions").add({
       title, date, time, notes,
+      videoUrl,
       dateTime: firebase.firestore.Timestamp.fromDate(dateTime),
       createdAt: firebase.firestore.FieldValue.serverTimestamp()
     });
     setScheduleMsg("Session added (shared)!", true);
   }else{
     const sessions = getSessionsLocal();
-    sessions.push({ title, date, time, notes });
+    sessions.push({ title, date, time, notes, videoUrl });
     saveSessionsLocal(sessions);
     setScheduleMsg("Session added (local)!", true);
     renderAll();
@@ -405,6 +358,7 @@ async function addSession(){
 
   if (sessTitle) sessTitle.value = "";
   if (sessNotes) sessNotes.value = "";
+  if (sessVideo) sessVideo.value = "";
 }
 
 async function clearSessions(){
@@ -461,6 +415,7 @@ if (sessionList){
   });
 }
 
+
 // ==============================
 // ✅ LIVE SESSIONS (hub realtime)
 // ==============================
@@ -479,19 +434,20 @@ function renderLive(lives){
     div.className = "item";
     const count = l.participants ? Object.keys(l.participants).length : 0;
 
-    const linkHtml = l.videoLink
-      ? `<div class="meta"><a href="${l.videoLink}" target="_blank" rel="noopener">Open video room</a></div>`
-      : `<div class="meta">No video link</div>`;
+    const videoBtn = l.videoUrl
+      ? `<button class="btn ghost" data-action="open-video" data-url="${escapeHtml(l.videoUrl)}" type="button">Open video</button>`
+      : "";
 
     div.innerHTML = `
       <div style="flex:1;">
         <strong>${escapeHtml(l.title || "Live Study")}</strong>
         <div class="meta">Participants: ${count}</div>
-        ${linkHtml}
+        ${l.videoUrl ? `<div class="meta">Video set ✅</div>` : `<div class="meta">No video link</div>`}
       </div>
       <div class="row">
         <button class="btn primary" data-action="join-live" data-id="${l.id}" type="button">Join</button>
-        <button class="btn ghost" data-action="end-live" data-id="${l.id}" type="button">End</button>
+        ${videoBtn}
+        <button class="btn danger" data-action="end-live" data-id="${l.id}" type="button">End</button>
       </div>
     `;
     liveList.appendChild(div);
@@ -514,7 +470,9 @@ function startLiveListener(){
       const lives = [];
       qs.forEach(doc => lives.push({ id: doc.id, ...doc.data() }));
       renderLive(lives);
-    }, (err) => console.error(err));
+    }, (err) => {
+      console.error(err);
+    });
 }
 
 async function startLiveSession(sessionId){
@@ -527,7 +485,6 @@ async function startLiveSession(sessionId){
   if (!sSnap.exists) return;
 
   const s = sSnap.data();
-  const meet = prompt("Optional: paste a video call link (Google Meet/Jitsi). Leave blank for none.") || "";
 
   const liveRef = db.collection("hubs").doc(hubId).collection("liveSessions").doc();
   await liveRef.set({
@@ -535,8 +492,8 @@ async function startLiveSession(sessionId){
     title: s.title || "Study Session",
     hostUid: user.uid,
     startedAt: firebase.firestore.FieldValue.serverTimestamp(),
-    participants: { [user.uid]: user.email || "host" },
-    videoLink: meet.trim()
+    videoUrl: safeUrl(s.videoUrl || ""), // ✅ pass session video link into live
+    participants: { [user.uid]: user.email || "host" }
   });
 
   alert("Live session started!");
@@ -579,119 +536,13 @@ document.addEventListener("click", async (e) => {
 
   if (btn.dataset.action === "join-live") await joinLiveSession(btn.dataset.id);
   if (btn.dataset.action === "end-live") await endLiveSession(btn.dataset.id);
+
+  if (btn.dataset.action === "open-video"){
+    const url = btn.dataset.url || "";
+    if (url) window.open(url, "_blank", "noopener");
+  }
 });
 
-// ==============================
-// ✅ HUB CHAT + SHARED NOTES
-// ==============================
-const chatText = document.getElementById("chatText");
-const sendChatBtn = document.getElementById("sendChatBtn");
-const chatList = document.getElementById("chatList");
-const chatEmpty = document.getElementById("chatEmpty");
-
-const sharedNotes = document.getElementById("sharedNotes");
-const saveNotesBtn = document.getElementById("saveNotesBtn");
-const notesStatus = document.getElementById("notesStatus");
-
-let unsubChat = null;
-let unsubNotes = null;
-
-function startChatListener(){
-  if (unsubChat){ unsubChat(); unsubChat = null; }
-
-  if (!usingHub()){
-    if (chatList) chatList.innerHTML = "";
-    if (chatEmpty) chatEmpty.style.display = "block";
-    return;
-  }
-
-  const hubId = getHubId();
-  unsubChat = db.collection("hubs").doc(hubId)
-    .collection("chat")
-    .orderBy("createdAt", "asc")
-    .limit(200)
-    .onSnapshot((qs) => {
-      const msgs = [];
-      qs.forEach(doc => msgs.push({ id: doc.id, ...doc.data() }));
-      renderChat(msgs);
-    }, (err) => console.error("chat listener error", err));
-}
-
-function renderChat(msgs){
-  if (!chatList) return;
-  chatList.innerHTML = "";
-  if (chatEmpty) chatEmpty.style.display = msgs.length ? "none" : "block";
-
-  msgs.forEach(m => {
-    const div = document.createElement("div");
-    div.className = "item";
-    div.innerHTML = `
-      <div style="flex:1;">
-        <strong>${escapeHtml(m.name || "User")}</strong>
-        <div class="meta">${escapeHtml(m.text || "")}</div>
-      </div>
-    `;
-    chatList.appendChild(div);
-  });
-
-  chatList.scrollTop = chatList.scrollHeight;
-}
-
-async function sendChat(){
-  if (!usingHub()){ alert("Join a hub first."); return; }
-  const user = firebase.auth().currentUser;
-  const text = (chatText?.value || "").trim();
-  if (!text) return;
-
-  const hubId = getHubId();
-  await db.collection("hubs").doc(hubId).collection("chat").add({
-    text,
-    uid: user.uid,
-    name: user.email || "member",
-    createdAt: firebase.firestore.FieldValue.serverTimestamp()
-  });
-
-  if (chatText) chatText.value = "";
-}
-
-if (sendChatBtn) sendChatBtn.addEventListener("click", sendChat);
-if (chatText) chatText.addEventListener("keydown", (e) => { if (e.key === "Enter") sendChat(); });
-
-function startNotesListener(){
-  if (unsubNotes){ unsubNotes(); unsubNotes = null; }
-
-  if (!usingHub()){
-    if (sharedNotes) sharedNotes.value = "";
-    if (notesStatus) notesStatus.textContent = "Not in a hub";
-    return;
-  }
-
-  const hubId = getHubId();
-  const ref = db.collection("hubs").doc(hubId).collection("meta").doc("notes");
-
-  unsubNotes = ref.onSnapshot((snap) => {
-    const data = snap.data() || {};
-    if (sharedNotes && document.activeElement !== sharedNotes){
-      sharedNotes.value = data.text || "";
-    }
-    if (notesStatus) notesStatus.textContent = "Synced";
-  }, (err) => console.error("notes listener error", err));
-}
-
-async function saveNotes(){
-  if (!usingHub()){ alert("Join a hub first."); return; }
-  const hubId = getHubId();
-  const ref = db.collection("hubs").doc(hubId).collection("meta").doc("notes");
-
-  await ref.set({
-    text: sharedNotes?.value || "",
-    updatedAt: firebase.firestore.FieldValue.serverTimestamp()
-  }, { merge: true });
-
-  if (notesStatus) notesStatus.textContent = "Saved";
-}
-
-if (saveNotesBtn) saveNotesBtn.addEventListener("click", saveNotes);
 
 // ---------- Dashboard (Tasks) ----------
 const taskText = document.getElementById("taskText");
@@ -851,67 +702,82 @@ if (taskList){
   });
 }
 
+
 // ---------- Resources ----------
 const resSearch = document.getElementById("resSearch");
 const resFilter = document.getElementById("resFilter");
 const resList = document.getElementById("resList");
 const resEmpty = document.getElementById("resEmpty");
 
+// ✅ Classes aligned to your dropdown labels
 const DEFAULT_RESOURCES = [
-  {cls:"All", title:"AP Students (Official)", url:"https://apstudents.collegeboard.org/"},
-  {cls:"All", title:"Khan Academy (AP Subjects)", url:"https://www.khanacademy.org/"},
-
+  // Calc
   {cls:"Calc AB", title:"AP Calc AB (College Board)", url:"https://apstudents.collegeboard.org/courses/ap-calculus-ab"},
+  {cls:"Calc AB", title:"Calc AB (Khan Academy)", url:"https://www.khanacademy.org/math/ap-calculus-ab"},
   {cls:"Calc BC", title:"AP Calc BC (College Board)", url:"https://apstudents.collegeboard.org/courses/ap-calculus-bc"},
-  {cls:"Stats", title:"AP Statistics (College Board)", url:"https://apstudents.collegeboard.org/courses/ap-statistics"},
+  {cls:"Calc BC", title:"Calc BC (Khan Academy)", url:"https://www.khanacademy.org/math/ap-calculus-bc"},
 
+  // Physics
   {cls:"Physics 1", title:"AP Physics 1 (College Board)", url:"https://apstudents.collegeboard.org/courses/ap-physics-1"},
   {cls:"Physics 2", title:"AP Physics 2 (College Board)", url:"https://apstudents.collegeboard.org/courses/ap-physics-2"},
-  {cls:"Physics C", title:"AP Physics C (College Board)", url:"https://apstudents.collegeboard.org/courses/ap-physics-c-electricity-and-magnetism"},
+  {cls:"Physics 2", title:"AP Physics 2 (Khan Academy)", url:"https://www.khanacademy.org/science/ap-physics-2"},
+  {cls:"Physics C", title:"AP Physics C (College Board)", url:"https://apstudents.collegeboard.org/courses/ap-physics-c-mechanics"},
+  {cls:"Physics C", title:"AP Physics C: E&M (College Board)", url:"https://apstudents.collegeboard.org/courses/ap-physics-c-electricity-and-magnetism"},
 
+  // Science
   {cls:"Chem", title:"AP Chemistry (College Board)", url:"https://apstudents.collegeboard.org/courses/ap-chemistry"},
+  {cls:"Chem", title:"AP Chemistry (Khan Academy)", url:"https://www.khanacademy.org/science/ap-chemistry"},
   {cls:"Bio", title:"AP Biology (College Board)", url:"https://apstudents.collegeboard.org/courses/ap-biology"},
-  {cls:"Environmental Science", title:"AP Environmental Science (College Board)", url:"https://apstudents.collegeboard.org/courses/ap-environmental-science"},
+  {cls:"Bio", title:"AP Biology (Khan Academy)", url:"https://www.khanacademy.org/science/ap-biology"},
 
-  {cls:"CSP", title:"AP CSP (College Board)", url:"https://apstudents.collegeboard.org/courses/ap-computer-science-principles"},
-  {cls:"CSA", title:"AP CSA (College Board)", url:"https://apstudents.collegeboard.org/courses/ap-computer-science-a"},
-
-  {cls:"APUSH", title:"AP US History (College Board)", url:"https://apstudents.collegeboard.org/courses/ap-united-states-history"},
-  {cls:"World", title:"AP World History (College Board)", url:"https://apstudents.collegeboard.org/courses/ap-world-history-modern"},
+  // History / Social Studies
+  {cls:"APUSH", title:"AP U.S. History (College Board)", url:"https://apstudents.collegeboard.org/courses/ap-united-states-history"},
   {cls:"Euro", title:"AP European History (College Board)", url:"https://apstudents.collegeboard.org/courses/ap-european-history"},
-  {cls:"Human Geo", title:"AP Human Geography (College Board)", url:"https://apstudents.collegeboard.org/courses/ap-human-geography"},
-  {cls:"Gov", title:"AP US Gov (College Board)", url:"https://apstudents.collegeboard.org/courses/ap-united-states-government-and-politics"},
-  {cls:"Comp Gov", title:"AP Comparative Gov (College Board)", url:"https://apstudents.collegeboard.org/courses/ap-comparative-government-and-politics"},
-  {cls:"Euro", title:"Heimler’s History (APUSH/World/Euro)", url:"https://www.youtube.com/@heimlershistory"},
-  {cls:"World", title:"Heimler’s History (APUSH/World/Euro)", url:"https://www.youtube.com/@heimlershistory"},
-  {cls:"APUSH", title:"Heimler’s History (APUSH/World/Euro)", url:"https://www.youtube.com/@heimlershistory"},
-
-  {cls:"Micro", title:"AP Microeconomics (College Board)", url:"https://apstudents.collegeboard.org/courses/ap-microeconomics"},
+  {cls:"Gov", title:"AP U.S. Government (College Board)", url:"https://apstudents.collegeboard.org/courses/ap-united-states-government-and-politics"},
   {cls:"Macro", title:"AP Macroeconomics (College Board)", url:"https://apstudents.collegeboard.org/courses/ap-macroeconomics"},
+  {cls:"Micro", title:"AP Microeconomics (College Board)", url:"https://apstudents.collegeboard.org/courses/ap-microeconomics"},
+  {cls:"HUGE", title:"AP Human Geography (College Board)", url:"https://apstudents.collegeboard.org/courses/ap-human-geography"},
 
-  {cls:"Lang", title:"AP English Lang (College Board)", url:"https://apstudents.collegeboard.org/courses/ap-english-language-and-composition"},
-  {cls:"Lit", title:"AP English Lit (College Board)", url:"https://apstudents.collegeboard.org/courses/ap-english-literature-and-composition"},
+  // English
+  {cls:"Lang", title:"AP English Language (College Board)", url:"https://apstudents.collegeboard.org/courses/ap-english-language-and-composition"},
+  {cls:"Lit", title:"AP English Literature (College Board)", url:"https://apstudents.collegeboard.org/courses/ap-english-literature-and-composition"},
 
-  {cls:"Psych", title:"AP Psychology (College Board)", url:"https://apstudents.collegeboard.org/courses/ap-psychology"},
+  // Capstone
   {cls:"Seminar", title:"AP Seminar (College Board)", url:"https://apstudents.collegeboard.org/courses/ap-seminar"},
-  {cls:"Research", title:"AP Research (College Board)", url:"https://apstudents.collegeboard.org/courses/ap-research"},
-
-  {cls:"Art History", title:"AP Art History (College Board)", url:"https://apstudents.collegeboard.org/courses/ap-art-history"},
-  {cls:"Music Theory", title:"AP Music Theory (College Board)", url:"https://apstudents.collegeboard.org/courses/ap-music-theory"},
-  {cls:"Studio Art", title:"AP Art & Design (College Board)", url:"https://apstudents.collegeboard.org/courses/ap-art-and-design"},
-
-  {cls:"French", title:"AP French (College Board)", url:"https://apstudents.collegeboard.org/courses/ap-french-language-and-culture"},
-  {cls:"Spanish Lang", title:"AP Spanish Lang (College Board)", url:"https://apstudents.collegeboard.org/courses/ap-spanish-language-and-culture"},
-  {cls:"Spanish Lit", title:"AP Spanish Lit (College Board)", url:"https://apstudents.collegeboard.org/courses/ap-spanish-literature-and-culture"},
-  {cls:"German", title:"AP German (College Board)", url:"https://apstudents.collegeboard.org/courses/ap-german-language-and-culture"},
-  {cls:"Italian", title:"AP Italian (College Board)", url:"https://apstudents.collegeboard.org/courses/ap-italian-language-and-culture"},
-  {cls:"Latin", title:"AP Latin (College Board)", url:"https://apstudents.collegeboard.org/courses/ap-latin"},
-  {cls:"Chinese", title:"AP Chinese (College Board)", url:"https://apstudents.collegeboard.org/courses/ap-chinese-language-and-culture"},
-  {cls:"Japanese", title:"AP Japanese (College Board)", url:"https://apstudents.collegeboard.org/courses/ap-japanese-language-and-culture"}
+  {cls:"Research", title:"AP Research (College Board)", url:"https://apstudents.collegeboard.org/courses/ap-research"}
 ];
 
 function resourcesKey(){ return currentUser ? `ap_resources_${currentUser.email}` : "ap_resources_guest"; }
-function getResources(){ return LS.get(resourcesKey(), DEFAULT_RESOURCES); }
+
+function mergeResources(saved, defaults){
+  const out = [];
+  const seen = new Set();
+
+  (saved || []).forEach(r => {
+    const key = (r.url || "") + "||" + (r.title || "");
+    if (!seen.has(key)){
+      seen.add(key);
+      out.push(r);
+    }
+  });
+
+  (defaults || []).forEach(r => {
+    const key = (r.url || "") + "||" + (r.title || "");
+    if (!seen.has(key)){
+      seen.add(key);
+      out.push(r);
+    }
+  });
+
+  return out;
+}
+
+function getResources(){
+  const key = resourcesKey();
+  const saved = LS.get(key, null);
+  if (!saved) return DEFAULT_RESOURCES;
+  return mergeResources(saved, DEFAULT_RESOURCES);
+}
 function saveResources(list){ LS.set(resourcesKey(), list); }
 
 function renderResources(){
@@ -920,7 +786,7 @@ function renderResources(){
   const filt = resFilter?.value || "All";
 
   const resources = getResources().filter(r => {
-    const matchClass = (filt === "All") || (r.cls === filt) || (r.cls === "All");
+    const matchClass = (filt === "All") || (r.cls === filt);
     const matchText = !q || (r.title.toLowerCase().includes(q) || r.cls.toLowerCase().includes(q));
     return matchClass && matchText;
   });
@@ -947,12 +813,18 @@ function renderResources(){
 if (resSearch) resSearch.addEventListener("input", renderResources);
 if (resFilter) resFilter.addEventListener("change", renderResources);
 
+
 // ---------- Home widgets ----------
 const userPill = document.getElementById("userPill");
 const todayFocus = document.getElementById("todayFocus");
 const upcomingSession = document.getElementById("upcomingSession");
 const progressBar = document.getElementById("progressBar");
 const progressText = document.getElementById("progressText");
+
+function formatDateTime(dateStr, timeStr){
+  if (!dateStr || !timeStr) return "";
+  return `${dateStr} at ${timeStr}`;
+}
 
 function renderHomeWidgets(){
   if (userPill){
@@ -965,6 +837,7 @@ function renderHomeWidgets(){
     todayFocus.textContent = nextTask ? `${nextTask.text} (${nextTask.cls})` : "No tasks — add one in Dashboard!";
   }
 
+  // home uses local schedule as a simple preview (shared schedule shows in schedule tab)
   const sessions = getSessionsLocal()
     .slice()
     .sort((a,b) => (a.date+a.time).localeCompare(b.date+b.time));
@@ -987,10 +860,6 @@ function escapeHtml(s){
   }[c]));
 }
 
-function formatDateTime(dateStr, timeStr){
-  if (!dateStr || !timeStr) return "";
-  return `${dateStr} at ${timeStr}`;
-}
 
 // ---------- Charts ----------
 function daysBack(n){
@@ -1005,7 +874,6 @@ function daysBack(n){
   return arr;
 }
 
-// Study minutes
 const studyMinutesEl = document.getElementById("studyMinutes");
 const addStudyBtn = document.getElementById("addStudyBtn");
 const clearStudyBtn = document.getElementById("clearStudyBtn");
@@ -1087,7 +955,8 @@ if (clearStudyBtn){
   });
 }
 
-// ---------- Grades ----------
+
+// ---------- Grades (assignment tracker) ----------
 const gradeClassEl = document.getElementById("gradeClass");
 const wSummEl = document.getElementById("wSumm");
 const wFormEl = document.getElementById("wForm");
@@ -1135,7 +1004,6 @@ function calcCurrentGrade(block){
 
   const summScores = block.assigns.filter(a=>a.cat==="summ").map(a=>Number(a.score));
   const formScores = block.assigns.filter(a=>a.cat==="form").map(a=>Number(a.score));
-
   const avg = (arr)=> arr.length ? (arr.reduce((a,b)=>a+b,0)/arr.length) : null;
 
   const summAvg = avg(summScores);
@@ -1319,6 +1187,67 @@ if (needNextBtn){
   });
 }
 
+
+// ==============================
+// ✅ Semester / Year Grade Calculator (ADDED)
+// ==============================
+const gradeModeEl = document.getElementById("gradeMode");
+const weightAEl = document.getElementById("weightA");
+const weightBEl = document.getElementById("weightB");
+const gradeAEl  = document.getElementById("gradeA");
+const gradeBEl  = document.getElementById("gradeB");
+const labelAEl  = document.getElementById("labelA");
+const labelBEl  = document.getElementById("labelB");
+const calcGradeBtn = document.getElementById("calcGradeBtn");
+const calcResultPill = document.getElementById("calcResultPill");
+const calcGradeText = document.getElementById("calcGradeText");
+
+function updateCalcLabels(){
+  if (!gradeModeEl) return;
+  const mode = gradeModeEl.value;
+  if (mode === "semester"){
+    if (labelAEl) labelAEl.textContent = "Q1 grade (%)";
+    if (labelBEl) labelBEl.textContent = "Q2 grade (%)";
+  } else {
+    if (labelAEl) labelAEl.textContent = "Sem 1 grade (%)";
+    if (labelBEl) labelBEl.textContent = "Sem 2 grade (%)";
+  }
+}
+
+function runCalc(){
+  if (!calcGradeText || !calcResultPill) return;
+
+  const a = Number(gradeAEl?.value);
+  const b = Number(gradeBEl?.value);
+  const wa = Number(weightAEl?.value);
+  const wb = Number(weightBEl?.value);
+
+  if ([a,b,wa,wb].some(x => Number.isNaN(x))){
+    calcGradeText.textContent = "Enter both grades + both weights.";
+    calcResultPill.textContent = "--";
+    return;
+  }
+  if (wa + wb !== 100){
+    calcGradeText.textContent = "Weights must add to 100.";
+    calcResultPill.textContent = "--";
+    return;
+  }
+  if (a < 0 || a > 100 || b < 0 || b > 100){
+    calcGradeText.textContent = "Grades must be 0–100.";
+    calcResultPill.textContent = "--";
+    return;
+  }
+
+  const result = (a*wa + b*wb) / (wa + wb);
+  calcResultPill.textContent = result.toFixed(1) + "%";
+  calcGradeText.textContent = "Done.";
+}
+
+if (gradeModeEl) gradeModeEl.addEventListener("change", updateCalcLabels);
+if (calcGradeBtn) calcGradeBtn.addEventListener("click", runCalc);
+updateCalcLabels();
+
+
 // ---------- Render all ----------
 function renderAll(){
   renderTasks();
@@ -1328,18 +1257,6 @@ function renderAll(){
   renderGrades();
   startScheduleListener();
   startLiveListener();
-  startChatListener();
-  startNotesListener();
 }
 
-// ==============================
-// ✅ Fill ALL dropdowns with ALL classes
-// ==============================
-fillSelect(taskClass, ALL_AP_CLASSES.filter(x => x !== "All"), false); // tasks shouldn't be "All"
-fillSelect(gradeClassEl, ALL_AP_CLASSES.filter(x => x !== "All"), false); // grades shouldn't be "All"
-
-// resources filter should include "All"
-fillSelect(resFilter, ALL_AP_CLASSES, true);
-
-// Keep defaults
 renderAll();
